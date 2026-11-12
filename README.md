@@ -1,5 +1,7 @@
 # Selim Electronics
 
+**Live Web App:** https://hamim5264.github.io/selim-electronics-webApp/
+
 Selim Electronics is a connected retail ecosystem for a Bangladesh-based electronics business. It consists of:
 
 - A completed **React + Vite + Tailwind CSS POS and business-management UI** in this repository.
