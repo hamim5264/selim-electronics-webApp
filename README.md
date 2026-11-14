@@ -1,20 +1,45 @@
-# Selim Electronics
+# DevEngine POS
 
 **Live Web App:** https://hamim5264.github.io/selim-electronics-webApp/
 
-Selim Electronics is a connected retail ecosystem for a Bangladesh-based electronics business. It consists of:
+DevEngine POS is a multi-tenant SaaS retail platform owned by DevEngine. Selim Electronics is one tenant example, not the platform identity. It consists of:
 
 - A completed **React + Vite + Tailwind CSS POS and business-management UI** in this repository.
 - A future **Flutter customer application** for Android and iOS.
 - One secure shared backend, database, storage layer, notification service, and payment workflow.
 
-This document is the project contract for review before feature implementation starts. It is based on the supplied [Infrastructure & Implementation Plan](requirements/Selim_Electronics_Infrastructure_Implementation_Plan.pdf) and the existing Figma Make UI specifications in `src/imports/pasted_text/`.
+This document is the project contract for review before feature implementation starts. It is based on the supplied [Infrastructure & Implementation Plan](requirements/Selim_Electronics_Infrastructure_Implementation_Plan.pdf), the existing Figma Make UI specifications in `src/imports/pasted_text/`, and the multi-tenant platform specification.
+
+The completed Phase 1 audit, canonical route map, proposed ERD, permission model, security boundaries, and gated delivery plan are in [docs/phase-1-foundation.md](docs/phase-1-foundation.md).
 
 ## Current status
 
-The existing visual POS application is intentionally preserved in `src/App.tsx`. It already represents the Figma design system and business screens; it is **not yet connected to production data or services**.
+The existing visual POS application is intentionally preserved in `src/App.tsx`. It already represents the Figma design system and business screens; it is **not yet connected to production data or services**. Its current signup, tenant, Super Admin, billing, storefront, and verification controls remain UI demonstrations until their Worker, Supabase, RLS, payment, and test foundations are implemented.
 
 No backend, database schema, Cloudflare deployment, mobile application, authentication provider, payment integration, or secrets are being added in this review stage.
+
+## UI route reference
+
+These routes are fully navigable UI prototypes using dummy data. They are not protected by a production backend yet.
+
+| Purpose | URL |
+| --- | --- |
+| DevEngine POS home | `/` |
+| Legacy home alias | `/branding` |
+| Product and pricing | `/product`, `/pricing` |
+| Public content | `/about`, `/blog`, `/contact`, `/support` |
+| Legal and accessibility | `/privacy`, `/terms`, `/cookies`, `/accessibility` |
+| Business registration | `/signup` |
+| Generic business sign-in | `/signin` |
+| Super Admin sign-in | `/workspace` |
+| Super Admin sections | `/workspace/dashboard`, `/workspace/organizations`, `/workspace/plans`, `/workspace/subscriptions`, `/workspace/users`, `/workspace/support`, `/workspace/settings` |
+| Buyer storefront | `/:tenantSlug` (for example, `/selim-electronics`) |
+| Buyer storefront pages | `/:tenantSlug/products`, `/:tenantSlug/cart`, `/:tenantSlug/checkout`, `/:tenantSlug/wishlist`, `/:tenantSlug/orders`, `/:tenantSlug/contact`, `/:tenantSlug/policies` |
+| Buyer business sign-in | `/:tenantSlug/login` (for example, `/selim-electronics/login`) |
+| Buyer admin workspace | `/:tenantSlug/admin/dashboard` and `/:tenantSlug/admin/:module` |
+| Legacy buyer workspace alias | `/:tenantSlug/workspace/:module` |
+
+`tenantSlug` is the buyer's unique workspace URL created during registration. Production URL reservation, authentication, access checks, and tenant data isolation are planned backend work.
 
 ## Run the existing UI
 
@@ -122,15 +147,46 @@ Supabase PostgreSQL ──> shared source of truth for staff and customers
 
 The UI may use Supabase only for its public authentication configuration where necessary. All business data and privileged actions flow through Workers. Workers must independently validate the access token and permissions on every protected request.
 
+## SaaS and multi-tenant expansion
+
+Selim Electronics is now designed as a product that can serve many independent businesses, not only the original Selim Electronics store. The current UI includes a public SaaS landing page, pricing, trial onboarding, multi-branch operations, subscription management, and a separate platform Super Admin route (`/platform`). These are UI demonstrations only; no subscription, tenant, payment, or account data is yet persisted.
+
+### Required tenant boundaries
+
+- Every business is an `organisation` (tenant). Every protected business record carries an `organisation_id` and is filtered by it in both Workers authorization and PostgreSQL RLS.
+- A tenant can own many `branches` / inventory locations, POS registers, employees, stock balances, cash accounts, subscriptions, and settings.
+- A staff member is granted a tenant role plus a location scope. A location manager must not automatically see other branches, organisation-wide finance, subscription administration, or Super Admin data.
+- Platform Super Admin is a separate platform-level role and UI. It must never be inferred from a tenant owner account or selected through public sign-up.
+- Public trial signup creates an untrusted onboarding request first; backend validation, verified ownership, subscription state, and tenant provisioning happen server-side.
+
+### Multi-location rules
+
+1. Inventory balances are location-specific. A sale affects only the selling location.
+2. Transfers require source, destination, requested/dispatched/received quantities, cost snapshot, status history, responsible staff and an audit event.
+3. Source staff dispatch; destination staff receive full or partial quantities. In-transit stock must not be sellable twice.
+4. Each register belongs to one branch, has a shift lifecycle, a cashier, opening/expected/actual tender totals, variances and close approval.
+5. Reports can be scoped to a branch or consolidated at tenant level without mixing tenants.
+
+### SaaS billing rules
+
+- Plans define feature entitlements and measurable limits such as locations, registers, staff accounts, usage and support tier.
+- Subscription status (`trialing`, `active`, `past_due`, `paused`, `canceled`) is server-controlled and audit logged.
+- Customer-facing billing must support invoices, payment methods, upgrades, downgrades, cancellations and payment-retry communication.
+- The billing provider sends verified webhooks to Workers; the browser must never be the authority for payment or plan status.
+- Entitlements are checked on every protected capability, not only when the user visits the billing screen.
+
+The UI direction follows established POS patterns: location-scoped roles and device controls, origin-to-destination stock transfer workflows, and self-service subscription billing. See Shopify's [POS permissions](https://help.shopify.com/en/manual/your-account/users/roles/permissions/pos-permissions) and [transfer workflow](https://help.shopify.com/en/manual/sell-in-person/shopify-pos/inventory-management/fulfilling-and-receiving-transfers), Lightspeed's [multi-location role guidance](https://retail-support.lightspeedhq.com/hc/en-us/articles/229129608-Setting-up-employee-roles-and-access), and Stripe's [billing portal overview](https://support.stripe.com/questions/billing-customer-portal?locale=en-GB).
+
 ## Data foundation
 
 Start with normalized PostgreSQL tables, foreign keys, unique constraints, indexes, RLS policies, and migrations. The initial domain proposal is:
 
 | Domain | Initial tables |
 | --- | --- |
+| Platform / tenancy | `organisations`, `organisation_members`, `branches`, `registers`, `register_shifts`, `plans`, `plan_features`, `subscriptions`, `subscription_items`, `billing_customers`, `billing_invoices`, `billing_events`, `feature_flags` |
 | Identity and access | `profiles`, `roles`, `permissions`, `role_permissions`, `user_roles`, `employee_profiles`, `device_tokens` |
 | Catalog | `categories`, `brands`, `products`, `product_images`, `product_variants`, `units` |
-| Inventory | `inventory_locations`, `inventory_balances`, `inventory_movements`, `stock_adjustments`, `stock_adjustment_items` |
+| Inventory | `inventory_locations`, `inventory_balances`, `inventory_movements`, `stock_adjustments`, `stock_adjustment_items`, `stock_transfers`, `stock_transfer_items`, `stock_transfer_receipts` |
 | Procurement | `suppliers`, `purchases`, `purchase_items`, `supplier_payments`, `supplier_returns` |
 | Sales and customers | `customers`, `sales`, `sale_items`, `sale_payments`, `customer_collections`, `customer_returns` |
 | Online commerce | `carts`, `cart_items`, `addresses`, `orders`, `order_items`, `order_status_history`, `deliveries` |

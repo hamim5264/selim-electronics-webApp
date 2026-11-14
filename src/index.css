@@ -1,6 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('../asstes/images/fonts/SFPRODISPLAYREGULAR.OTF') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('../asstes/images/fonts/SFPRODISPLAYMEDIUM.OTF') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('../asstes/images/fonts/SFPRODISPLAYBOLD.OTF') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -38,7 +59,7 @@
   --border: #e5e5e5;
   --ring: #0a0a0a;
 
-  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-inter: 'SF Pro Display', system-ui, -apple-system, sans-serif;
   --font-jetbrains: 'JetBrains Mono', 'Courier New', monospace;
 
   /* Semantic */
@@ -218,12 +239,18 @@ body {
 .landing-reveal { animation: rise-in 700ms cubic-bezier(.16, 1, .3, 1) both; }
 .landing-reveal-delayed { animation: rise-in 850ms 140ms cubic-bezier(.16, 1, .3, 1) both; }
 .landing-panel { animation: panel-glow 5s ease-in-out infinite; }
-.auth-grid { background-image: linear-gradient(rgba(100, 116, 139, 0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(100, 116, 139, 0.18) 1px, transparent 1px); background-size: 32px 32px; }
+.auth-grid { background: radial-gradient(circle at 20% 12%, rgba(148,163,184,.16), transparent 33%), radial-gradient(circle at 90% 88%, rgba(30,41,59,.5), transparent 45%), #020617; opacity: 1 !important; isolation: isolate; }
+.auth-grid::before, .auth-grid::after { content: none; }
 .auth-brand-reveal { animation: rise-in 600ms cubic-bezier(.16, 1, .3, 1) both; }
 .auth-brand-mark { animation: brand-pulse 4s ease-in-out infinite; }
 .brand-marquee { mask-image: linear-gradient(to right, transparent, black 7%, black 93%, transparent); }
 .brand-marquee-track { display: flex; width: max-content; gap: 14px; animation: brand-marquee 28s linear infinite; }
 .brand-marquee:hover .brand-marquee-track { animation-play-state: paused; }
+.buyer-marquee { overflow: hidden; mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); }
+.buyer-marquee-track { display: flex; width: max-content; gap: 14px; animation: buyer-marquee 34s linear infinite reverse; }
+.buyer-marquee:hover .buyer-marquee-track { animation-play-state: paused; }
+.buyer-tile { display: flex; min-width: 245px; align-items: center; gap: 12px; border: 1px solid rgb(226 232 240); border-radius: 16px; background: linear-gradient(135deg, #fff, #f8fafc); padding: 12px 14px; color: #0f172a; font-size: 13px; box-shadow: 0 8px 20px rgb(15 23 42 / 0.05); }
+.buyer-avatar { display: flex; height: 34px; width: 34px; flex: 0 0 auto; align-items: center; justify-content: center; border-radius: 11px; background: #020617; color: #67e8f9; font-size: 10px; font-weight: 800; }
 .brand-tile { display: flex; min-width: 178px; align-items: center; gap: 11px; border: 1px solid #e2e8f0; border-radius: 14px; background: rgba(255,255,255,.82); padding: 12px 16px; color: #0f172a; font-size: 15px; font-weight: 700; box-shadow: 0 5px 18px rgba(15,23,42,.04); }
 .brand-mark { display: flex; height: 32px; width: 32px; align-items: center; justify-content: center; border-radius: 9px; color: #fff; font-size: 11px; font-weight: 900; letter-spacing: -.05em; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
 
@@ -232,6 +259,94 @@ body {
 @keyframes panel-glow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 @keyframes brand-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
 @keyframes brand-marquee { to { transform: translateX(calc(-50% - 7px)); } }
+@keyframes buyer-marquee { to { transform: translateX(calc(-50% - 7px)); } }
+.auth-monitor-wrap { width: 100%; max-width: 680px; }
+.auth-monitor-bezel { overflow: hidden; border: 7px solid #334155; border-bottom-width: 10px; border-radius: 18px; background: #0f172a; box-shadow: 0 28px 60px rgba(2,6,23,.65), inset 0 0 0 1px rgba(148,163,184,.25); }
+.auth-monitor-topbar { display: flex; height: 30px; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,.08); padding: 0 12px; background: #0f172a; }
+.auth-monitor-screen { position: relative; width: 100%; height: 270px; overflow: hidden; background: #020617; }
+.auth-monitor-footer { display: flex; height: 28px; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid rgba(255,255,255,.08); padding: 0 12px; background: #020617; }
+.auth-monitor-neck { width: 18%; height: 16px; margin: 0 auto; background: linear-gradient(180deg, #334155, #64748b); }
+.auth-monitor-base { width: 34%; height: 7px; margin: 0 auto; border-radius: 999px; background: linear-gradient(90deg, #475569, #cbd5e1, #475569); box-shadow: 0 6px 14px rgba(2,6,23,.45); }
+.auth-scene-layer { position: absolute; inset: 0; overflow: hidden; }
+.auth-scene-enter { z-index: 2; animation: auth-scene-enter 360ms cubic-bezier(.16, 1, .3, 1) both; }
+.auth-scene-exit { z-index: 1; pointer-events: none; animation: auth-scene-exit 340ms ease-out both; }
+.auth-step-in { animation: auth-step-in 280ms cubic-bezier(.16, 1, .3, 1) both; }
+.auth-line-draw { stroke-dasharray: 420; stroke-dashoffset: 420; animation: auth-line-draw 1050ms cubic-bezier(.16, 1, .3, 1) forwards; }
+.auth-area-reveal { animation: auth-area-reveal 900ms 150ms ease-out both; }
+.auth-pill-fill { width: 0%; animation-name: auth-pill-fill; animation-timing-function: linear; animation-fill-mode: forwards; }
+@media (min-width: 640px) { .auth-monitor-screen { height: 325px; } }
+@media (min-width: 1280px) { .auth-monitor-screen { height: 355px; } }
+.buyer-review-card { animation: buyer-review-in 520ms cubic-bezier(.16, 1, .3, 1) both; }
+.buyer-showcase-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.buyer-showcase-card { display: flex; min-height: 88px; align-items: center; gap: 13px; border: 1px solid #e2e8f0; border-radius: 18px; background: linear-gradient(145deg, #fff, #f8fafc); padding: 14px; text-align: left; box-shadow: 0 9px 24px rgba(15,23,42,.045); transition: transform 260ms ease, border-color 260ms ease, box-shadow 260ms ease; animation: buyer-card-arrive 620ms cubic-bezier(.16, 1, .3, 1) both; }
+.buyer-showcase-card:hover, .buyer-showcase-card.is-active { transform: translateY(-5px); border-color: #0f172a; box-shadow: 0 18px 34px rgba(15,23,42,.12); }
+.buyer-showcase-monogram { display: flex; height: 42px; width: 42px; flex: 0 0 auto; align-items: center; justify-content: center; border-radius: 14px; background: #020617; color: #fff; font-size: 11px; font-weight: 900; letter-spacing: -.05em; }
+.buyer-showcase-status { margin-left: auto; height: 8px; width: 8px; flex: 0 0 auto; border-radius: 999px; background: #cbd5e1; transition: background 220ms ease, box-shadow 220ms ease; }
+.buyer-showcase-card.is-active .buyer-showcase-status { background: #020617; box-shadow: 0 0 0 5px #e2e8f0; }
+.registration-journey { width: min(100%, 370px); margin-top: 28px; overflow: hidden; border: 1px solid rgba(255,255,255,.18); border-radius: 18px; background: rgba(255,255,255,.06); box-shadow: 0 20px 50px rgba(0,0,0,.22); }
+.registration-journey-top, .registration-journey-footer { display: flex; min-height: 30px; align-items: center; justify-content: space-between; padding: 0 12px; color: #94a3b8; font-size: 8px; font-weight: 900; letter-spacing: .14em; }
+.registration-journey-body { min-height: 156px; padding: 16px; background: linear-gradient(150deg, rgba(255,255,255,.97), #e2e8f0); color: #0f172a; animation: registration-scene-in 300ms ease-out both; }
+.registration-journey-kicker { color: #64748b; font-size: 8px; font-weight: 900; letter-spacing: .16em; }.registration-journey-body strong { display: block; margin-top: 5px; font-size: 18px; letter-spacing: -.045em; }
+.registration-journey-field, .registration-journey-check, .registration-journey-ready { display: flex; align-items: center; justify-content: space-between; margin-top: 9px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; padding: 8px 9px; color: #64748b; font-size: 9px; }.registration-journey-field b, .registration-journey-check b { color: #0f172a; font-size: 10px; }.registration-journey-field b { opacity: 0; animation: registration-fill 1.35s linear infinite; }.registration-journey-field.delay b { animation-delay: .26s; }
+.registration-journey-check b { display: inline-flex; min-width: 22px; justify-content: flex-end; }.registration-journey-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }.registration-journey-stats span { border-radius: 8px; background: #0f172a; padding: 11px; color: #cbd5e1; font-size: 8px; }.registration-journey-stats b { display: block; margin-bottom: 3px; color: #fff; font-size: 14px; letter-spacing: -.05em; }.registration-journey-ready { background: #0f172a; color: #fff; font-weight: 700; }.registration-journey-ready b { font-size: 14px; }
+.registration-journey-footer { background: #020617; }.registration-journey-footer div { display: flex; gap: 4px; }.registration-journey-footer i { height: 5px; width: 5px; border-radius: 999px; background: #475569; }.registration-journey-footer i.active { width: 16px; background: #fff; }
+@keyframes auth-scene-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes auth-scene-exit { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-4px); } }
+@keyframes auth-step-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes auth-line-draw { to { stroke-dashoffset: 0; } }
+@keyframes auth-area-reveal { from { opacity: 0; } to { opacity: 1; } }
+@keyframes auth-pill-fill { from { width: 0%; } to { width: 100%; } }
+@keyframes buyer-review-in { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes buyer-card-arrive { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
+@keyframes registration-scene-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes registration-fill { 0%, 20% { opacity: 0; transform: translateX(-5px); } 36%, 100% { opacity: 1; transform: translateX(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-scene-enter, .auth-scene-exit, .auth-step-in, .auth-line-draw, .auth-area-reveal, .auth-pill-fill, .buyer-review-card, .buyer-showcase-card, .registration-journey-body, .registration-journey-field b { animation: none; }
+  .auth-line-draw { stroke-dashoffset: 0; }
+  .auth-pill-fill { width: 100%; }
+}
+
+@media (max-width: 640px) {
+  .buyer-showcase-grid { grid-template-columns: 1fr; }
+}
+
+/* Platform access and registration stay monochrome; red is reserved for the buyer-app carousel. */
+#root main:not(.landing-page) .text-red-300,
+#root main:not(.landing-page) .text-red-200,
+#root main:not(.landing-page) .text-red-600,
+#root main:not(.landing-page) .text-red-900 { color: rgb(203 213 225); }
+#root main:not(.landing-page) .text-red-600 { color: rgb(15 23 42); }
+#root main:not(.landing-page) .bg-red-50 { background-color: rgb(248 250 252); }
+#root main:not(.landing-page) .bg-red-500,
+#root main:not(.landing-page) .bg-red-600,
+#root main:not(.landing-page) .bg-red-700 { background-color: rgb(2 6 23); }
+#root main:not(.landing-page) .border-red-300,
+#root main:not(.landing-page) .border-red-700 { border-color: rgb(15 23 42); }
+#root main:not(.landing-page) .hover\:bg-red-700:hover { background-color: rgb(30 41 59); }
+#root main:not(.landing-page) .hover\:border-red-300:hover { border-color: rgb(15 23 42); }
+
+/* Landing footer: keep platform information bright, deliberate and easy to scan. */
+.landing-footer .text-slate-300 { color: rgba(255, 255, 255, .96); }
+.landing-footer .text-slate-400 { color: rgba(255, 255, 255, .72); }
+.landing-footer > div > div > div:first-child > button { margin: 2rem 1.5rem 0 0; padding: .9rem 1.25rem; vertical-align: middle; box-shadow: 0 12px 28px rgba(255,255,255,.10); }
+.landing-footer > div > div > div:first-child > button + div { margin: 2rem 0 0; vertical-align: middle; color: rgba(255,255,255,.84); }
+
+/* The access screen is the only place the product loop lives. Keep the mark clean. */
+main:has(.workspace-demo-wrap) aside > div.relative:nth-of-type(2) > div:first-child { border-radius: 0 !important; background: transparent !important; padding: 0 !important; box-shadow: none !important; }
+main:has(.workspace-demo-wrap) aside > div.relative:nth-of-type(2) > div:nth-child(2) { font-size: 0; }
+main:has(.workspace-demo-wrap) aside > div.relative:nth-of-type(2) > div:nth-child(2)::after { content: "Secure access for independent retail teams"; color: #cbd5e1; font-size: 11px; font-weight: 800; letter-spacing: .18em; }
+
+/* Registration is a focused form, not a product demo. Keep every step compact. */
+main:has(.registration-journey) .registration-journey { display: none; }
+main:has(.registration-journey) > div > div.grid { align-items: start; }
+main:has(.registration-journey) > div > div.grid > section { align-self: start; }
+main:has(.registration-journey) > div > div.grid > aside > .mt-8 { margin-top: 2rem; }
+@media (min-width: 1024px) and (max-height: 900px) {
+  main:has(.registration-journey) { padding-top: 1.25rem; padding-bottom: 1.25rem; }
+  main:has(.registration-journey) > div > div.grid { gap: 2rem; }
+  main:has(.registration-journey) h1 { font-size: clamp(2.5rem, 4vw, 4rem); }
+}
 
 @media (max-width: 1120px) {
   :root { --sidebar-width: 220px; --sidebar-collapsed-width: 58px; }
