@@ -22,6 +22,13 @@
   font-style: normal;
   font-display: swap;
 }
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('../asstes/images/fonts/SFPRODISPLAYBOLD.OTF') format('opentype');
+  font-weight: 600 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -169,6 +176,39 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Super Admin uses crisp sans UI typography with sharp subpixel rendering. */
+.super-admin-canvas,
+.super-admin-canvas button,
+.super-admin-canvas input,
+.super-admin-canvas select,
+.super-admin-canvas textarea {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif !important;
+  text-shadow: none !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.super-admin-executive {
+  background-color: #f1f5f9;
+}
+
+.super-admin-executive h1,
+.super-admin-executive h2,
+.super-admin-executive h3 {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Super Admin floating shell & crisp header defaults */
+.super-admin-executive header {
+  overflow: visible !important;
+}
+.super-admin-executive header > div:first-child {
+  overflow: visible;
+}
+.super-admin-executive aside nav::-webkit-scrollbar {
+  width: 4px;
 }
 
 /* Thin, branded scrollbar */
@@ -352,6 +392,240 @@ main:has(.registration-journey) > div > div.grid > aside > .mt-8 { margin-top: 2
   :root { --sidebar-width: 220px; --sidebar-collapsed-width: 58px; }
 }
 
+/* DevEngine POS Logo Anatomy & Brand Storytelling section */
+.logo-story-backdrop {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(0, 212, 240, 0.14), rgba(0, 169, 204, 0.04) 36%, transparent 66%),
+    radial-gradient(circle at 18% 20%, rgba(14, 165, 233, 0.08), transparent 45%),
+    radial-gradient(circle at 82% 78%, rgba(0, 212, 240, 0.08), transparent 48%);
+}
+
+.logo-story-grid {
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.9) 25%, transparent 78%);
+}
+
+.logo-story-ambient-glow {
+  background: radial-gradient(circle, rgba(0, 212, 240, 0.24) 0%, rgba(0, 169, 204, 0.09) 46%, transparent 72%);
+  filter: blur(26px);
+}
+
+.logo-story-mark img {
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.65s ease, transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.logo-story-stage.is-revealed .logo-story-mark img {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.logo-story-svg-group {
+  opacity: 0;
+  transition: opacity 0.32s ease;
+}
+
+.logo-story-svg-group.is-drawn {
+  opacity: 1;
+}
+
+.logo-story-svg-group.is-drawn.is-dimmed {
+  opacity: 0.36;
+}
+
+.logo-story-origin-node,
+.logo-story-end-node {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.logo-story-svg-group.is-drawn .logo-story-origin-node {
+  opacity: 1;
+}
+
+.logo-story-svg-group.is-drawn .logo-story-end-node {
+  opacity: 1;
+  transition-delay: 0.38s;
+}
+
+.logo-story-line {
+  stroke-dashoffset: var(--line-length, 320);
+  transition:
+    stroke-dashoffset 0.78s cubic-bezier(0.22, 1, 0.36, 1),
+    stroke-opacity 0.25s ease,
+    stroke-width 0.25s ease,
+    stroke 0.25s ease;
+}
+
+.logo-story-svg-group.is-drawn .logo-story-line {
+  stroke-dashoffset: 0;
+}
+
+@keyframes logo-story-pulse {
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scale(1.26);
+    opacity: 1;
+  }
+}
+
+.logo-story-svg-group.is-active .logo-story-pulse-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: logo-story-pulse 1.6s ease-in-out infinite;
+}
+
+/* Header top logo recurring optical sharpness & glint loop */
+.devengine-logo-sharpness-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+@keyframes devengine-sharpness-loop {
+  0%, 56%, 88%, 100% {
+    filter: blur(0px) contrast(1) saturate(1) brightness(1) drop-shadow(0 0 0 rgba(0, 212, 240, 0));
+    transform: scale(1);
+  }
+  62% {
+    filter: blur(0.45px) contrast(0.94) saturate(0.96) brightness(0.98) drop-shadow(0 0 0 rgba(0, 212, 240, 0));
+    transform: scale(0.996);
+  }
+  70%, 76% {
+    filter: blur(0px) contrast(1.28) saturate(1.2) brightness(1.06) drop-shadow(0 0 9px rgba(0, 212, 240, 0.38));
+    transform: scale(1.016);
+  }
+}
+
+@keyframes devengine-glint-sweep {
+  0%, 62% {
+    background-position: 150% 0;
+    opacity: 0;
+  }
+  66% {
+    opacity: 1;
+  }
+  78% {
+    background-position: -50% 0;
+    opacity: 0.9;
+  }
+  84%, 100% {
+    background-position: -60% 0;
+    opacity: 0;
+  }
+}
+
+.devengine-logo-sharpness {
+  animation: devengine-sharpness-loop 5.2s ease-in-out infinite;
+  will-change: filter, transform;
+}
+
+.devengine-logo-glint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(
+    112deg,
+    transparent 34%,
+    rgba(255, 255, 255, 0.85) 48%,
+    rgba(0, 212, 240, 0.72) 52%,
+    transparent 66%
+  );
+  background-size: 240% 100%;
+  background-repeat: no-repeat;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mix-blend-mode: screen;
+  animation: devengine-glint-sweep 5.2s ease-in-out infinite;
+}
+
+/* Footer SSLCommerz payment acceptance continuous marquee */
+.payment-marquee {
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+
+.payment-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 10px;
+  animation: payment-marquee 38s linear infinite;
+}
+
+.payment-marquee-track-reverse {
+  display: flex;
+  width: max-content;
+  gap: 10px;
+  animation: payment-marquee 42s linear infinite reverse;
+}
+
+.payment-marquee:hover .payment-marquee-track,
+.payment-marquee:hover .payment-marquee-track-reverse {
+  animation-play-state: paused;
+}
+
+.payment-logo-pill {
+  display: inline-flex;
+  height: 44px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.96);
+  padding: 0 14px;
+  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.35);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.payment-logo-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 212, 240, 0.22);
+}
+
+@keyframes payment-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 5px));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .logo-story-mark img,
+  .logo-story-svg-group,
+  .logo-story-origin-node,
+  .logo-story-end-node,
+  .logo-story-line {
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dashoffset: 0 !important;
+    transition: none !important;
+    animation: none !important;
+  }
+  .logo-story-pulse-ring,
+  .devengine-logo-sharpness,
+  .devengine-logo-glint,
+  .payment-marquee-track,
+  .payment-marquee-track-reverse {
+    animation: none !important;
+  }
+  .payment-marquee {
+    overflow-x: auto;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
 }

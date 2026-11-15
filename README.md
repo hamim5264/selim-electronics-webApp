@@ -32,7 +32,7 @@ These routes are fully navigable UI prototypes using dummy data. They are not pr
 | Business registration | `/signup` |
 | Generic business sign-in | `/signin` |
 | Super Admin sign-in | `/workspace` |
-| Super Admin sections | `/workspace/dashboard`, `/workspace/organizations`, `/workspace/plans`, `/workspace/subscriptions`, `/workspace/users`, `/workspace/support`, `/workspace/settings` |
+| Super Admin sections | `/workspace/dashboard`, `/workspace/organizations`, `/workspace/verification`, `/workspace/subscriptions`, `/workspace/plans`, `/workspace/features`, `/workspace/content`, `/workspace/support`, `/workspace/audit`, `/workspace/profile`, `/workspace/settings` |
 | Buyer storefront | `/:tenantSlug` (for example, `/selim-electronics`) |
 | Buyer storefront pages | `/:tenantSlug/products`, `/:tenantSlug/cart`, `/:tenantSlug/checkout`, `/:tenantSlug/wishlist`, `/:tenantSlug/orders`, `/:tenantSlug/contact`, `/:tenantSlug/policies` |
 | Buyer business sign-in | `/:tenantSlug/login` (for example, `/selim-electronics/login`) |

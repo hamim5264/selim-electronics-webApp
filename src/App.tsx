@@ -4,8 +4,44 @@ import logoLandscapeWhiteImg from "../asstes/images/logo_landscape_white.png";
 import logoLandscapeBlackImg from "../asstes/images/logo_landscape_black.png";
 import playstoreImg from "../asstes/images/playstore.png";
 import appleLogoImg from "../asstes/images/apple-logo.png";
-import devEngineLogoImg from "../asstes/images/DevEngine-logo-on-dark.png";
+import devEngineFaviconImg from "../asstes/images/devengine_favicons.png";
+import devEngineLandscapeImg from "../asstes/images/devengine_pos_landscape.png";
+import devEngineLandscapeWhiteImg from "../asstes/images/devengine_pos_landscape_white.png";
+import devEnginePortraitImg from "../asstes/images/devengine_pos_portrait.png";
+import devEnginePortraitWhiteImg from "../asstes/images/devengine_pos_portrait_white.png";
 import AuthProductShowcase from "./components/AuthProductShowcase";
+import LogoStorytellingSection from "./components/LogoStorytellingSection";
+import PaymentAcceptedStrip from "./components/PaymentAcceptedStrip";
+import SuperAdminIcon, { type SuperAdminIconName } from "./components/SuperAdminIcon";
+import {
+  AuditView,
+  ContentView,
+  FeaturesView,
+  OrganisationsView,
+  OverviewView,
+  PlansView,
+  ProfileView,
+  SettingsView,
+  SubscriptionsView,
+  SuperAdminViewProps,
+  SupportView,
+  VerificationView,
+} from "./components/SuperAdminViews";
+import {
+  AuditCategory,
+  AuditEntry,
+  clearPlatformState,
+  loadPlatformState,
+  PlanId,
+  PlatformContentState,
+  PlatformPlan,
+  PlatformState,
+  PlatformTenant,
+  savePlatformState,
+  SupportTicket,
+  TENANT_MODULE_META,
+  TenantModuleKey,
+} from "./platform/platformState";
 
 // ─── Icon primitive ───────────────────────────────────────────────────────────
 const Icon = ({ d, size = 16, stroke = 1.5 }: { d: string; size?: number; stroke?: number }) => (
@@ -337,7 +373,7 @@ const navigation = [
   { group: "ADMINISTRATION", items: [{ id: "employees", label: "Employees", icon: "employees" }, { id: "subscription", label: "Plan & Billing", icon: "wallet" }, { id: "notifications", label: "Notifications", icon: "notifications" }, { id: "settings", label: "Settings", icon: "settings" }] },
 ];
 
-function Sidebar({ collapsed, activeItem, onNavigate, onToggle, businessName = "Your business" }: { collapsed: boolean; activeItem: string; onNavigate: (id: string) => void; onToggle: () => void; businessName?: string }) {
+function Sidebar({ collapsed, activeItem, onNavigate, onToggle, businessName = "Your business", restrictedIds = [] }: { collapsed: boolean; activeItem: string; onNavigate: (id: string) => void; onToggle: () => void; businessName?: string; restrictedIds?: string[] }) {
   return (
     <aside className="h-full border-r border-[var(--border)] bg-[var(--background)] flex flex-col transition-all duration-200 ease-in-out overflow-hidden shrink-0" style={{ width: collapsed ? "var(--sidebar-collapsed-width)" : "var(--sidebar-width)" }}>
       <div className={`flex items-center border-b border-[var(--border)] shrink-0 h-16 ${collapsed ? "justify-center" : "justify-between px-4"}`}>
@@ -353,10 +389,12 @@ function Sidebar({ collapsed, activeItem, onNavigate, onToggle, businessName = "
             {collapsed && gi > 0 && <div className="my-2 border-t border-[var(--border)]/50 mx-1" />}
             {group.items.map(item => {
               const isActive = activeItem === item.id;
+              const isRestricted = restrictedIds.includes(item.id);
               return (
-                <button key={item.id} onClick={() => onNavigate(item.id)} title={collapsed ? item.label : undefined} className={`w-full flex items-center gap-2.5 rounded-lg transition-all duration-150 mb-0.5 ${collapsed ? "justify-center h-9 w-9 mx-auto" : "h-9 px-2.5"} ${isActive ? "bg-[var(--foreground)] text-[var(--background)]" : "text-[var(--muted-foreground)] hover:bg-[var(--secondary)] hover:text-[var(--foreground)]"}`}>
+                <button key={item.id} onClick={() => onNavigate(item.id)} title={collapsed ? (isRestricted ? `${item.label} (gated by Super Admin)` : item.label) : undefined} className={`w-full flex items-center gap-2.5 rounded-lg transition-all duration-150 mb-0.5 ${collapsed ? "justify-center h-9 w-9 mx-auto" : "h-9 px-2.5"} ${isActive ? "bg-[var(--foreground)] text-[var(--background)]" : isRestricted ? "text-[var(--muted-foreground)]/60 hover:bg-[var(--secondary)]/60" : "text-[var(--muted-foreground)] hover:bg-[var(--secondary)] hover:text-[var(--foreground)]"}`}>
                   <span className="shrink-0"><Icon d={icons[item.icon]} size={15} /></span>
-                  {!collapsed && <span className={`text-[13px] font-medium truncate ${isActive ? "text-[var(--background)]" : ""}`}>{item.label}</span>}
+                  {!collapsed && <span className={`text-[13px] font-medium truncate flex-1 text-left ${isActive ? "text-[var(--background)]" : ""}`}>{item.label}</span>}
+                  {!collapsed && isRestricted && <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide ${isActive ? "bg-white/20 text-white" : "bg-[var(--secondary)] text-[var(--muted-foreground)]"}`}>Off</span>}
                 </button>
               );
             })}
@@ -416,7 +454,7 @@ function AuthCard({ children }: { children: React.ReactNode }) {
 function AuthBrand() {
   return (
     <div className="auth-brand-reveal mb-9 text-center">
-      <div className="mx-auto mb-5 inline-flex rounded-2xl bg-slate-950 p-3"><DevEngineLogo className="w-[170px]" /></div>
+      <DevEnginePortraitLogo tone="dark" className="mx-auto mb-5 w-[132px]" />
       <div className="text-[24px] font-bold tracking-[0.035em] text-[var(--foreground)]">DEVENGINE POS</div>
       <div className="mt-2 text-[15px] text-[var(--muted-foreground)]">The operating system for growing businesses.</div>
     </div>
@@ -439,7 +477,7 @@ const publicPageContent: Record<PublicPage, { eyebrow: string; title: string; le
 };
 
 function LandscapeLogo({ tone = "dark", size = "standard", className = "" }: { tone?: "dark" | "light"; size?: "hero" | "standard" | "footer" | "panel"; className?: string }) {
-  if (size === "panel") return <div className={`flex h-[52px] w-[180px] items-center rounded-xl bg-white/5 px-3 ${className}`}><DevEngineLogo className="w-[155px]" /></div>;
+  if (size === "panel") return <div className={`flex h-[52px] w-[180px] items-center px-1 ${className}`}><DevEngineLogo tone={tone} className="w-[155px]" /></div>;
   const sizes = {
     hero: { frame: "h-[128px] w-full max-w-[520px] sm:h-[148px]", image: "w-[920px] -translate-x-[56%] sm:w-[1040px]" },
     standard: { frame: "h-[76px] w-[270px]", image: "w-[540px] -translate-x-[56%]" },
@@ -449,12 +487,28 @@ function LandscapeLogo({ tone = "dark", size = "standard", className = "" }: { t
   return <div className={`relative shrink-0 overflow-hidden ${sizes.frame} ${className}`}><img src={tone === "light" ? logoLandscapeWhiteImg : logoLandscapeBlackImg} alt="Selim Electronics" className={`absolute left-1/2 top-1/2 max-w-none -translate-y-1/2 ${sizes.image}`} /></div>;
 }
 
-function DevEngineLogo({ className = "" }: { className?: string }) {
-  return <img src={devEngineLogoImg} alt="DevEngine" className={`h-auto w-[178px] object-contain ${className}`} />;
+function DevEngineLogo({ tone = "dark", sharpnessLoop = false, className = "" }: { tone?: "dark" | "light"; sharpnessLoop?: boolean; className?: string }) {
+  const src = tone === "light" ? devEngineLandscapeWhiteImg : devEngineLandscapeImg;
+  const img = <img src={src} alt="DevEngine POS" className={`h-auto w-[178px] object-contain ${sharpnessLoop ? "devengine-logo-sharpness" : ""} ${className}`} />;
+  if (!sharpnessLoop) return img;
+  return (
+    <span className="devengine-logo-sharpness-wrap">
+      {img}
+      <span
+        aria-hidden="true"
+        className="devengine-logo-glint"
+        style={{ maskImage: `url(${src})`, WebkitMaskImage: `url(${src})` }}
+      />
+    </span>
+  );
 }
 
-function DevEnginePosWordmark() {
-  return <div className="flex items-center gap-2.5" aria-label="DevEngine POS"><span className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-gradient-to-br from-cyan-300 via-cyan-500 to-sky-700 text-[16px] font-black text-white shadow-lg shadow-cyan-500/20">▶</span><span className="text-[17px] font-black tracking-[-0.06em] text-slate-950">Dev<span className="text-cyan-500">Engine</span><span className="ml-1 text-[10px] tracking-[0.12em] text-slate-500">POS</span></span></div>;
+function DevEnginePortraitLogo({ tone = "dark", className = "" }: { tone?: "dark" | "light"; className?: string }) {
+  return <img src={tone === "light" ? devEnginePortraitWhiteImg : devEnginePortraitImg} alt="DevEngine POS" className={`h-auto w-[124px] object-contain ${className}`} />;
+}
+
+function DevEnginePosWordmark({ tone = "dark", sharpnessLoop = true }: { tone?: "dark" | "light"; sharpnessLoop?: boolean }) {
+  return <div className="flex items-center" aria-label="DevEngine POS"><DevEngineLogo tone={tone} sharpnessLoop={sharpnessLoop} className="w-[190px]" /></div>;
 }
 
 function PublicInfoPage({ page, onBack, onContinue }: { page: PublicPage; onBack: () => void; onContinue: () => void }) {
@@ -463,25 +517,49 @@ function PublicInfoPage({ page, onBack, onContinue }: { page: PublicPage; onBack
     <main className="landing-page min-h-[100dvh] overflow-x-hidden bg-[#f8fafc] text-slate-950">
       <div className="landing-orb landing-orb-one" /><div className="landing-orb landing-orb-two" />
       <div className="landing-inner relative mx-auto flex min-h-[100dvh] max-w-[1120px] flex-col px-6 sm:px-10 lg:px-16">
-        <nav className="flex h-24 items-center justify-between"><button onClick={onBack} className="rounded-xl bg-slate-950 px-3 py-2 text-left"><DevEngineLogo className="w-[145px]" /><span className="sr-only">DevEngine POS</span></button><button onClick={onContinue} className="rounded-full bg-slate-950 px-5 py-2.5 text-[14px] font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800">Business sign in →</button></nav>
+        <nav className="flex h-24 items-center justify-between"><button onClick={onBack} className="text-left transition hover:opacity-80"><DevEngineLogo tone="dark" sharpnessLoop className="w-[160px]" /><span className="sr-only">DevEngine POS</span></button><button onClick={onContinue} className="rounded-full bg-slate-950 px-5 py-2.5 text-[14px] font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800">Business sign in →</button></nav>
         <section className="landing-reveal flex flex-1 items-center py-16 sm:py-24"><div className="grid w-full gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20"><div><button onClick={onBack} className="mb-9 text-[13px] font-semibold text-slate-500 transition hover:text-slate-950">← Back to DevEngine POS</button><div className="text-[12px] font-bold uppercase tracking-[0.18em] text-slate-500">{content.eyebrow}</div><h1 className="mt-5 text-[clamp(3.2rem,7vw,6.5rem)] font-black leading-[0.92] tracking-[-0.065em]">{content.title}</h1><p className="mt-7 max-w-2xl text-[18px] leading-relaxed text-slate-600">{content.lead}</p></div><aside className="self-center rounded-[28px] border border-slate-200 bg-white/85 p-7 shadow-xl shadow-slate-900/5 backdrop-blur-sm sm:p-8"><div className="text-[12px] font-bold uppercase tracking-[0.16em] text-cyan-700">DevEngine POS platform</div><p className="mt-4 text-[16px] leading-relaxed text-slate-700">{content.summary}</p><div className="mt-7 space-y-3 border-t border-slate-100 pt-6">{content.points.map(point => <div key={point} className="flex gap-3 text-[14px] font-medium text-slate-800"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-[11px] text-emerald-600">✓</span>{point}</div>)}</div></aside></div></section>
-        <footer className="mt-auto flex flex-wrap items-center justify-between gap-5 border-t border-slate-200 py-6 text-[12px] text-slate-500"><div className="rounded-xl bg-slate-950 px-3 py-2"><DevEngineLogo className="w-[160px]" /></div><div className="text-right"><div>© {new Date().getFullYear()} DevEngine POS</div><div className="mt-1 font-medium text-slate-700">Retail, built to scale.</div></div></footer>
+        <footer className="mt-auto flex flex-wrap items-center justify-between gap-5 border-t border-slate-200 py-6 text-[12px] text-slate-500"><div><DevEngineLogo tone="dark" className="w-[165px]" /></div><div className="text-right"><div>© {new Date().getFullYear()} DevEngine POS</div><div className="mt-1 font-medium text-slate-700">Retail, built to scale.</div></div></footer>
       </div>
     </main>
   );
 }
 
-function LandingPage({ onContinue, onOpenPage, onStartTrial, guestApp }: { onContinue: () => void; onOpenPage: (page: PublicPage) => void; onStartTrial: (plan?: string) => void; guestApp: GuestAppConfig }) {
+function LandingPage({
+  onContinue,
+  onOpenPage,
+  onStartTrial,
+  guestApp,
+  platformContent,
+  platformPlans,
+  disabledPaymentChannels,
+  paymentEnvironment,
+}: {
+  onContinue: () => void;
+  onOpenPage: (page: PublicPage) => void;
+  onStartTrial: (plan?: string) => void;
+  guestApp: GuestAppConfig;
+  platformContent?: PlatformContentState;
+  platformPlans?: PlatformPlan[];
+  disabledPaymentChannels?: string[];
+  paymentEnvironment?: "Sandbox" | "Live";
+}) {
   const [storeNotice, setStoreNotice] = useState<"play" | "apple" | null>(null);
   const openStore = (store: "play" | "apple") => {
     const url = store === "play" ? guestApp.playStoreUrl : guestApp.appStoreUrl;
     if (url) window.open(url, "_blank", "noopener,noreferrer");
     else setStoreNotice(store);
   };
+  const isSectionVisible = (id: string) => platformContent?.sections.find(s => s.id === id)?.visible ?? true;
   return (
     <main className="landing-page min-h-[100dvh] overflow-x-hidden bg-[#f8fafc] text-slate-950">
       <div className="landing-orb landing-orb-one" />
       <div className="landing-orb landing-orb-two" />
+      {platformContent?.maintenanceBannerEnabled && (
+        <div className="relative z-20 border-b border-amber-300/60 bg-amber-50 px-6 py-2.5 text-center text-[12px] font-semibold text-amber-900">
+          {platformContent.maintenanceBannerText}
+        </div>
+      )}
       <div className="landing-inner relative mx-auto flex min-h-[100dvh] max-w-[1600px] flex-col px-6 sm:px-10 lg:px-20">
         <nav className="flex h-24 items-center justify-between gap-5">
           <DevEnginePosWordmark />
@@ -491,9 +569,9 @@ function LandingPage({ onContinue, onOpenPage, onStartTrial, guestApp }: { onCon
 
         <section className="grid flex-1 items-center gap-12 py-12 lg:grid-cols-[1.12fr_0.88fr] lg:py-20">
           <div className="landing-reveal max-w-4xl">
-            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white/75 px-4 py-2 text-[12px] font-bold uppercase tracking-[0.16em] text-slate-600 shadow-sm"><span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />Built for modern retail operations</div>
-            <h1 className="max-w-5xl text-[clamp(4.2rem,9.4vw,10.25rem)] font-black leading-[0.84] tracking-[-0.085em] text-slate-950">Run retail<br /><span className="text-slate-400">with clarity.</span></h1>
-            <p className="mt-9 max-w-2xl text-[clamp(1.12rem,1.8vw,1.42rem)] leading-relaxed text-slate-600">DevEngine POS gives every retailer a secure, scalable workspace for sales, inventory, customers and finance — so every decision feels faster, clearer and in control.</p>
+            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white/75 px-4 py-2 text-[12px] font-bold uppercase tracking-[0.16em] text-slate-600 shadow-sm"><span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />{platformContent?.heroBadge || "Built for modern retail operations"}</div>
+            <h1 className="max-w-5xl text-[clamp(4.2rem,9.4vw,10.25rem)] font-black leading-[0.84] tracking-[-0.085em] text-slate-950">{platformContent?.heroHeadlineTop || "Run retail"}<br /><span className="text-slate-400">{platformContent?.heroHeadlineMuted || "with clarity."}</span></h1>
+            <p className="mt-9 max-w-2xl text-[clamp(1.12rem,1.8vw,1.42rem)] leading-relaxed text-slate-600">{platformContent?.heroDescription || "DevEngine POS gives every retailer a secure, scalable workspace for sales, inventory, customers and finance — so every decision feels faster, clearer and in control."}</p>
             <div className="mt-11 flex flex-wrap items-center gap-5">
               <button onClick={() => onStartTrial("growth")} className="group inline-flex h-[68px] items-center gap-3 rounded-2xl bg-slate-950 px-8 text-[16px] font-bold text-white shadow-xl shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800">Start your free trial <span className="text-[19px] transition-transform group-hover:translate-x-1" aria-hidden="true">→</span></button>
               <div className="flex h-[68px] items-center gap-4 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-cyan-50 px-5 text-[14px] font-semibold text-slate-800 shadow-[0_10px_28px_rgba(15,23,42,0.10)]"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-[10px] font-black tracking-tight text-cyan-300">24/7</span><span><span className="block text-[11px] uppercase tracking-[0.12em] text-slate-400">Always on</span>Business visibility</span><span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]" /></div>
@@ -502,7 +580,7 @@ function LandingPage({ onContinue, onOpenPage, onStartTrial, guestApp }: { onCon
 
           <div className="landing-panel landing-reveal-delayed relative overflow-hidden rounded-[32px] bg-slate-950 p-6 text-white shadow-2xl shadow-slate-900/25 sm:p-8">
             <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl" />
-            <div className="relative flex items-center justify-between gap-4 border-b border-white/10 pb-6"><div><div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Your workspace at a glance</div><div className="mt-2 text-[20px] font-semibold">Your business, in motion</div></div><DevEngineLogo className="w-[130px]" /></div>
+            <div className="relative flex items-center justify-between gap-4 border-b border-white/10 pb-6"><div><div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Your workspace at a glance</div><div className="mt-2 text-[20px] font-semibold">Your business, in motion</div></div><DevEngineLogo tone="light" className="w-[130px]" /></div>
             <div className="relative grid grid-cols-2 gap-3 py-7">
               {[{ value: "৳ 86,450", label: "Sales today" }, { value: "128", label: "Items in stock" }, { value: "24", label: "Orders in progress" }, { value: "98.4%", label: "Inventory accuracy" }].map((stat) => <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/[0.07] p-4 backdrop-blur-sm"><div className="text-[clamp(1.15rem,2vw,1.6rem)] font-bold tracking-tight">{stat.value}</div><div className="mt-1 text-[12px] text-slate-400">{stat.label}</div></div>)}
             </div>
@@ -515,19 +593,22 @@ function LandingPage({ onContinue, onOpenPage, onStartTrial, guestApp }: { onCon
           <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">{[{ icon: "pos", title: "Fast checkout", text: "Barcode, discounts, split payment, returns and shift-ready receipts." }, { icon: "inventory", title: "Inventory truth", text: "Serialised stock, stocktakes, purchase receiving and alerts." }, { icon: "finance", title: "Clear money", text: "Cash flow, expenses, dues, tax-ready sales and profit reporting." }, { icon: "customers", title: "Customer growth", text: "Profiles, loyalty-ready history, credit limits and targeted follow-up." }].map(card => <div key={card.title} className="rounded-2xl border border-slate-200 bg-white/75 p-6 shadow-sm"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white"><Icon d={icons[card.icon]} size={18} /></span><h3 className="mt-5 text-[17px] font-bold">{card.title}</h3><p className="mt-2 text-[14px] leading-relaxed text-slate-600">{card.text}</p></div>)}</div>
         </section>
         <section id="locations" className="rounded-[36px] bg-slate-950 px-7 py-14 text-white shadow-2xl shadow-slate-900/15 sm:px-12 sm:py-20"><div className="grid gap-12 lg:grid-cols-[1fr_0.9fr] lg:items-center"><div><div className="text-[12px] font-bold uppercase tracking-[0.16em] text-slate-400">Made for multi-branch retail</div><h2 className="mt-4 text-[clamp(2.8rem,5vw,5rem)] font-black leading-[0.9] tracking-[-0.065em]">One business.<br />Every location accountable.</h2><p className="mt-6 max-w-xl text-[17px] leading-relaxed text-slate-300">Give every branch its own stock, registers, staff access and performance view while owners see consolidated results in real time.</p><button onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })} className="mt-9 rounded-xl bg-white px-5 py-3 text-[14px] font-bold text-slate-950 transition hover:bg-slate-200">Compare multi-location plans →</button></div><div className="grid gap-3 sm:grid-cols-2">{[{ value: "03", label: "Branch workspaces" }, { value: "12", label: "POS registers" }, { value: "02", label: "Transfers in transit" }, { value: "Live", label: "Consolidated reporting" }].map(item => <div key={item.label} className="rounded-2xl border border-white/10 bg-white/[0.07] p-6"><div className="text-[32px] font-bold">{item.value}</div><div className="mt-1 text-[13px] text-slate-400">{item.label}</div></div>)}</div></div></section>
-        <section id="pricing" className="py-20 sm:py-24"><div className="mx-auto max-w-2xl text-center"><div className="text-[12px] font-bold uppercase tracking-[0.16em] text-emerald-600">Simple, scalable pricing</div><h2 className="mt-3 text-[clamp(2.4rem,5vw,4.4rem)] font-black leading-[0.95] tracking-[-0.055em]">Start small. Scale with confidence.</h2><p className="mt-5 text-[16px] leading-relaxed text-slate-600">Explore each plan first. Begin registration only when you have chosen the right fit for your business.</p></div><SaasPricingExplorer onStartRegistration={onStartTrial} /></section>
+        {isSectionVisible("pricing") && <section id="pricing" className="py-20 sm:py-24"><div className="mx-auto max-w-2xl text-center"><div className="text-[12px] font-bold uppercase tracking-[0.16em] text-emerald-600">Simple, scalable pricing</div><h2 className="mt-3 text-[clamp(2.4rem,5vw,4.4rem)] font-black leading-[0.95] tracking-[-0.055em]">Start small. Scale with confidence.</h2><p className="mt-5 text-[16px] leading-relaxed text-slate-600">Explore each plan first. Begin registration only when you have chosen the right fit for your business.</p></div><SaasPricingExplorer onStartRegistration={onStartTrial} livePlans={platformPlans} /></section>}
         <section className="border-t border-slate-200 py-20"><div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]"><div><div className="text-[12px] font-bold uppercase tracking-[0.16em] text-emerald-600">Your subscription journey</div><h2 className="mt-3 text-[clamp(2.2rem,4vw,3.8rem)] font-black leading-[0.96] tracking-[-0.055em]">From plan to a live business workspace.</h2><p className="mt-5 text-[16px] leading-relaxed text-slate-600">Each buyer gets an independent organisation URL, private data boundary, controlled plan limits and their own branded customer-app option.</p><button onClick={() => onStartTrial("growth")} className="mt-7 rounded-xl bg-slate-950 px-5 py-3 text-[14px] font-bold text-white transition hover:bg-slate-800">Begin buyer setup →</button></div><div className="grid gap-3 sm:grid-cols-2">{[{ no: "01", title: "Select a plan", text: "Choose Starter, Growth or Scale based on locations, staff and features." }, { no: "02", title: "Create your business", text: "Set your business name and first branch. Your unique workspace URL is reserved." }, { no: "03", title: "Confirm subscription", text: "Review billing and activate the paid plan after the trial or sales approval." }, { no: "04", title: "Launch your workspace", text: "Invite staff, configure products, POS registers and your optional customer app." }].map(step => <div key={step.no} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="text-[12px] font-black tracking-[0.14em] text-emerald-600">{step.no}</div><h3 className="mt-4 text-[17px] font-bold">{step.title}</h3><p className="mt-2 text-[13px] leading-relaxed text-slate-600">{step.text}</p></div>)}</div></div></section>
-        <BuyerAppCarousel onStore={openStore} />
+        <LogoStorytellingSection />
+        {isSectionVisible("apps") && <BuyerAppCarousel onStore={openStore} apps={platformContent?.buyerApps.filter(a => a.featured)} />}
         <TrustedBrandsMarquee />
         <TrustedBuyersShowcase />
-        <BuyerReviews />
+        {isSectionVisible("reviews") && <BuyerReviews />}
         <footer className="landing-footer mt-auto pt-12 pb-7">
           <div className="overflow-hidden rounded-[32px] bg-slate-950 px-7 py-10 text-white shadow-2xl shadow-slate-900/15 sm:px-10 sm:py-12">
-            <div className="grid gap-11 lg:grid-cols-[1.45fr_repeat(3,1fr)]"><div className="max-w-sm"><DevEngineLogo className="w-[210px]" /><p className="mt-6 text-[15px] leading-relaxed text-slate-300">DevEngine POS gives independent businesses a calm, connected way to operate, grow and stay in control.</p><button onClick={() => onStartTrial("growth")} className="mt-7 rounded-xl bg-white px-4 py-3 text-[13px] font-bold text-slate-950 transition hover:bg-slate-200">Explore your workspace →</button><div className="mt-7 inline-flex items-center gap-2 text-[12px] font-semibold text-slate-400"><span className="h-2 w-2 rounded-full bg-white animate-pulse" />Platform systems operational</div></div>
+            <div className="grid gap-11 lg:grid-cols-[1.45fr_repeat(3,1fr)]"><div className="max-w-sm"><DevEngineLogo tone="light" className="w-[210px]" /><p className="mt-6 text-[15px] leading-relaxed text-slate-300">DevEngine POS gives independent businesses a calm, connected way to operate, grow and stay in control.</p><button onClick={() => onStartTrial("growth")} className="mt-7 rounded-xl bg-white px-4 py-3 text-[13px] font-bold text-slate-950 transition hover:bg-slate-200">Explore your workspace →</button><div className="mt-7 inline-flex items-center gap-2 text-[12px] font-semibold text-slate-400"><span className="h-2 w-2 rounded-full bg-white animate-pulse" />Platform systems operational</div></div>
               <FooterColumn dark title="Platform" links={[{ label: "Product overview", page: "about" }, { label: "Plans & pricing", page: "pricing" }, { label: "Customer stories", page: "blog" }]} onOpenPage={onOpenPage} />
               <FooterColumn dark title="Support" links={[{ label: "Support centre", page: "support" }, { label: "Accessibility", page: "accessibility" }, { label: "Business sign in", action: onContinue }]} onOpenPage={onOpenPage} />
               <FooterColumn dark title="Legal" links={[{ label: "Privacy policy", page: "privacy" }, { label: "Terms of service", page: "terms" }, { label: "Cookie notice", page: "cookies" }]} onOpenPage={onOpenPage} />
-            </div><div className="mt-11 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-6 text-[12px] text-slate-400"><span>© {new Date().getFullYear()} DevEngine POS. All rights reserved.</span><span>Built for retail teams, from one counter to every branch.</span></div>
+            </div>
+            {isSectionVisible("payments") && <PaymentAcceptedStrip disabledChannelIds={disabledPaymentChannels} environment={paymentEnvironment} />}
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-6 text-[12px] text-slate-400"><span>© {new Date().getFullYear()} DevEngine POS. All rights reserved.</span><span>Built for retail teams, from one counter to every branch.</span></div>
           </div>
         </footer>
       </div>
@@ -541,22 +622,43 @@ function StoreButton({ store, onClick }: { store: "play" | "apple"; onClick: () 
   return <button onClick={onClick} className="flex min-w-[148px] items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-left transition hover:-translate-y-0.5 hover:bg-white/15"><img src={play ? playstoreImg : appleLogoImg} alt="" className="h-7 w-7 object-contain" /><span><span className="block text-[9px] font-medium uppercase tracking-[0.08em] text-slate-300">{play ? "Get it on" : "Download on the"}</span><span className="block text-[15px] font-semibold leading-tight">{play ? "Google Play" : "App Store"}</span></span></button>;
 }
 
-function BuyerAppCarousel({ onStore }: { onStore: (store: "play" | "apple") => void }) {
+function BuyerAppCarousel({
+  onStore,
+  apps: customApps,
+}: {
+  onStore: (store: "play" | "apple") => void;
+  apps?: { name: string; type: string }[];
+}) {
   const [active, setActive] = useState(0);
-  const apps = [{ name: "Selim Electronics", type: "Electronics", color: "from-slate-950 via-slate-800 to-black" }, { name: "Nova Homeware", type: "Home & living", color: "from-zinc-900 via-slate-700 to-black" }, { name: "Urban Mart", type: "Everyday retail", color: "from-black via-slate-800 to-slate-950" }];
+  const colors = ["from-slate-950 via-slate-800 to-black", "from-zinc-900 via-slate-700 to-black", "from-black via-slate-800 to-slate-950"];
+  const defaultApps = [{ name: "Selim Electronics", type: "Electronics" }, { name: "Nova Homeware", type: "Home & living" }, { name: "Urban Mart", type: "Everyday retail" }];
+  const apps = (customApps && customApps.length ? customApps : defaultApps).map((a, idx) => ({ ...a, color: colors[idx % colors.length] }));
+  useEffect(() => {
+    setActive(current => current % Math.max(1, apps.length));
+  }, [apps.length]);
   useEffect(() => {
     const timer = window.setInterval(() => setActive(current => (current + 1) % apps.length), 4600);
     return () => window.clearInterval(timer);
   }, [apps.length]);
-  const app = apps[active];
+  const app = apps[active] || apps[0];
   return <section className="mb-10 overflow-hidden rounded-[28px] bg-slate-950 p-6 text-white shadow-2xl shadow-slate-900/15 sm:p-8"><div className="grid gap-7 lg:grid-cols-[1fr_0.9fr] lg:items-center"><div><div className="text-[12px] font-bold uppercase tracking-[0.16em] text-slate-300">Built on DevEngine POS</div><h2 className="mt-3 text-[clamp(1.9rem,3.5vw,3rem)] font-black leading-[0.98] tracking-[-0.045em]">Discover buyer apps, powered by the platform.</h2><p className="mt-4 max-w-xl text-[14px] leading-relaxed text-slate-300">A rotating showcase for subscribed businesses with the branded customer-app add-on. App visibility and store links are controlled only by DevEngine POS Super Admin.</p><div className="mt-6 flex flex-wrap gap-2">{apps.map((item, index) => <button key={item.name} onClick={() => setActive(index)} className={`rounded-full px-3 py-2 text-[12px] font-semibold transition ${active === index ? "bg-white text-slate-950 shadow-lg shadow-white/10" : "bg-white/10 text-slate-300 hover:bg-white/15"}`}>{item.name}</button>)}</div><div className="mt-5 flex items-center gap-2" aria-label="Carousel position">{apps.map((item, index) => <button key={`${item.name}-dot`} onClick={() => setActive(index)} className={`h-1.5 rounded-full transition-all ${active === index ? "w-7 bg-white" : "w-1.5 bg-white/25"}`} aria-label={`Show ${item.name}`} />)}</div></div><div className={`relative overflow-hidden rounded-[24px] bg-gradient-to-br ${app.color} p-6 shadow-xl transition-all duration-700`}><div className="absolute -right-10 -top-12 h-44 w-44 rounded-full bg-white/20 blur-2xl" /><div className="relative flex items-start justify-between"><div><div className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/70">Featured customer app · Auto rotating</div><div className="mt-2 text-[24px] font-bold">{app.name}</div><div className="mt-1 text-[13px] text-white/80">{app.type}</div></div><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-[18px] font-black">{app.name.slice(0, 2).toUpperCase()}</div></div><div className="relative mt-8 rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur"><div className="text-[13px] font-semibold">Shop, track orders and get updates.</div><div className="mt-4 flex flex-wrap gap-2"><StoreButton store="play" onClick={() => onStore("play")} /><StoreButton store="apple" onClick={() => onStore("apple")} /></div></div></div></div></section>;
 }
 
-const saasPlans = [
+type SaasPlanCard = {
+  id: string;
+  name: string;
+  price: string;
+  note: string;
+  locations: string;
+  popular?: boolean;
+  features: readonly string[];
+};
+
+const saasPlans: readonly SaasPlanCard[] = [
   { id: "starter", name: "Starter", price: "৳ 2,500", note: "For a single store getting organised.", locations: "1 location included", features: ["POS, products & inventory", "Sales and cash reporting", "3 staff accounts", "Email support"] },
   { id: "growth", name: "Growth", price: "৳ 5,900", note: "For growing retail teams.", locations: "Up to 3 locations", popular: true, features: ["Everything in Starter", "Transfers and branch reporting", "10 staff accounts", "Purchase orders & supplier dues", "Priority support"] },
   { id: "scale", name: "Scale", price: "Custom", note: "For connected retail groups.", locations: "Unlimited locations", features: ["Everything in Growth", "Advanced roles and approval controls", "Consolidated finance & exports", "Dedicated success manager", "Custom integrations"] },
-] as const;
+];
 
 function SaasPricing({ onSelect }: { onSelect: (plan?: string) => void }) {
   return <div className="mt-12 grid gap-5 lg:grid-cols-3">{saasPlans.map(plan => <div key={plan.id} className={`relative flex flex-col rounded-[24px] border p-7 ${plan.popular ? "border-slate-950 bg-slate-950 text-white shadow-2xl shadow-slate-900/20" : "border-slate-200 bg-white/80 text-slate-950 shadow-sm"}`}>
@@ -564,9 +666,12 @@ function SaasPricing({ onSelect }: { onSelect: (plan?: string) => void }) {
     <div className={`text-[12px] font-bold uppercase tracking-[0.16em] ${plan.popular ? "text-slate-400" : "text-slate-500"}`}>{plan.name}</div><div className="mt-4 text-[37px] font-black tracking-[-0.055em]">{plan.price}<span className={`ml-1 text-[14px] font-medium ${plan.popular ? "text-slate-400" : "text-slate-500"}`}>{plan.price === "Custom" ? "" : "/ month"}</span></div><p className={`mt-3 text-[14px] leading-relaxed ${plan.popular ? "text-slate-300" : "text-slate-600"}`}>{plan.note}</p><div className={`mt-6 rounded-xl border px-3 py-2 text-[12px] font-semibold ${plan.popular ? "border-white/15 bg-white/10 text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}>{plan.locations}</div><div className="mt-6 space-y-3">{plan.features.map(feature => <div key={feature} className={`flex gap-2 text-[13px] ${plan.popular ? "text-slate-200" : "text-slate-700"}`}><span className="font-bold text-emerald-500">✓</span>{feature}</div>)}</div><button onClick={() => onSelect(plan.id)} className={`mt-8 w-full rounded-xl px-4 py-3 text-[14px] font-bold transition ${plan.popular ? "bg-white text-slate-950 hover:bg-slate-200" : "bg-slate-950 text-white hover:bg-slate-800"}`}>{plan.id === "scale" ? "Talk to sales" : "Start 14-day trial"}</button></div>)}</div>;
 }
 
-function SaasPricingExplorer({ onStartRegistration }: { onStartRegistration: (plan?: string) => void }) {
-  const [selectedPlan, setSelectedPlan] = useState<(typeof saasPlans)[number] | null>(null);
-  return <><div className="mt-12 grid gap-5 lg:grid-cols-3">{saasPlans.map(plan => <button key={plan.id} onClick={() => setSelectedPlan(plan)} className={`relative flex min-h-[440px] flex-col rounded-[24px] border p-7 text-left transition duration-200 hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-slate-950/10 ${plan.popular ? "border-slate-950 bg-slate-950 text-white shadow-2xl shadow-slate-900/20" : "border-slate-200 bg-white/80 text-slate-950 shadow-sm hover:border-slate-400"}`}>
+function SaasPricingExplorer({ onStartRegistration, livePlans }: { onStartRegistration: (plan?: string) => void; livePlans?: PlatformPlan[] }) {
+  const displayPlans: readonly SaasPlanCard[] = livePlans?.length
+    ? livePlans.map(p => ({ id: p.id, name: p.name, price: p.price, note: p.note, locations: p.locationsCap === "Unlimited" ? "Unlimited locations" : `Up to ${p.locationsCap} location(s)`, popular: p.popular, features: p.features }))
+    : saasPlans;
+  const [selectedPlan, setSelectedPlan] = useState<SaasPlanCard | null>(null);
+  return <><div className="mt-12 grid gap-5 lg:grid-cols-3">{displayPlans.map(plan => <button key={plan.id} onClick={() => setSelectedPlan(plan)} className={`relative flex min-h-[440px] flex-col rounded-[24px] border p-7 text-left transition duration-200 hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-slate-950/10 ${plan.popular ? "border-slate-950 bg-slate-950 text-white shadow-2xl shadow-slate-900/20" : "border-slate-200 bg-white/80 text-slate-950 shadow-sm hover:border-slate-400"}`}>
     {plan.popular && <div className="absolute -top-3 left-6 rounded-full bg-emerald-400 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-950">Most popular</div>}
     <div className={`text-[12px] font-bold uppercase tracking-[0.16em] ${plan.popular ? "text-slate-400" : "text-slate-500"}`}>{plan.name}</div><div className="mt-4 text-[37px] font-black tracking-[-0.055em]">{plan.price}<span className={`ml-1 text-[14px] font-medium ${plan.popular ? "text-slate-400" : "text-slate-500"}`}>{plan.price === "Custom" ? "" : "/ month"}</span></div><p className={`mt-3 text-[14px] leading-relaxed ${plan.popular ? "text-slate-300" : "text-slate-600"}`}>{plan.note}</p><div className={`mt-6 rounded-xl border px-3 py-2 text-[12px] font-semibold ${plan.popular ? "border-white/15 bg-white/10 text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}>{plan.locations}</div><div className="mt-6 space-y-3">{plan.features.map(feature => <div key={feature} className={`flex gap-2 text-[13px] ${plan.popular ? "text-slate-200" : "text-slate-700"}`}><span className="font-bold text-emerald-500">✓</span>{feature}</div>)}</div><span className={`mt-auto pt-8 text-[14px] font-bold ${plan.popular ? "text-white" : "text-slate-950"}`}>Explore plan details →</span></button>)}</div>
   <Modal open={selectedPlan !== null} onClose={() => setSelectedPlan(null)} title={selectedPlan ? `${selectedPlan.name} plan details` : "Plan details"} size="lg">{selectedPlan && <div><div className="rounded-2xl bg-slate-950 p-6 text-white"><div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">DevEngine POS subscription</div><div className="mt-3 flex flex-wrap items-end justify-between gap-3"><div><div className="text-[30px] font-black tracking-tight">{selectedPlan.price}{selectedPlan.price === "Custom" ? "" : <span className="ml-1 text-[14px] font-medium text-slate-400">/ month</span>}</div><div className="mt-1 text-[13px] text-slate-300">{selectedPlan.locations}</div></div><span className="rounded-full bg-white/10 px-3 py-2 text-[12px] font-semibold">No purchase on this page</span></div></div><div className="mt-6 grid gap-3 sm:grid-cols-2">{selectedPlan.features.map((feature, index) => <div key={feature} className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-[13px] font-medium text-slate-700"><span className="mr-2 text-slate-950">0{index + 1}.</span>{feature}</div>)}</div><div className="mt-6 rounded-xl border border-slate-200 p-4 text-[13px] leading-relaxed text-slate-600">Registration will collect business, compliance and billing information. A trial starts only after you finish that guided process; no payment is captured in this UI preview.</div><div className="mt-6 flex flex-wrap justify-end gap-3"><button onClick={() => setSelectedPlan(null)} className="rounded-xl border border-slate-200 px-4 py-3 text-[13px] font-bold text-slate-700">Keep exploring</button><button onClick={() => onStartRegistration(selectedPlan.id)} className="rounded-xl bg-slate-950 px-5 py-3 text-[13px] font-bold text-white">Continue to registration →</button></div></div>}</Modal></>;
@@ -948,7 +1053,7 @@ function TenantWorkspaceSignIn({ tenant, onSuccess, onBack, onRegister }: { tena
     if (!email || !password) { setError("Enter your work email and password to continue."); return; }
     onSuccess();
   };
-  return <main className="min-h-[100dvh] bg-[#f8fafc] text-slate-950"><div className="grid min-h-[100dvh] lg:grid-cols-[0.9fr_1.1fr]"><aside className="relative hidden overflow-hidden bg-slate-950 p-12 text-white lg:flex lg:flex-col"><div className="absolute inset-0 auth-grid opacity-30" /><div className="relative"><div className="rounded-xl bg-white/5 p-3"><DevEngineLogo className="w-[205px]" /></div><div className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-red-300">Secure business workspace</div></div><div className="relative my-auto max-w-xl"><h1 className="text-[clamp(3rem,5vw,5.8rem)] font-black leading-[0.9] tracking-[-0.07em]">Your business.<br />One clear system.</h1><p className="mt-7 max-w-md text-[17px] leading-relaxed text-slate-300">Sign in to your private DevEngine POS workspace to manage daily operations, teams, branches and subscriptions.</p><div className="mt-8 flex items-center gap-3 text-[13px] text-slate-400"><span className="h-2 w-2 rounded-full bg-red-400" />Tenant-separated access and role-based permissions</div></div><div className="relative text-[12px] text-slate-400">© {new Date().getFullYear()} DevEngine POS · Built by DevEngine</div></aside><section className="relative flex min-h-[100dvh] items-center justify-center p-5 sm:p-10"><button onClick={onBack} className="absolute left-5 top-5 rounded-full border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold shadow-sm transition hover:border-slate-950 sm:left-10 sm:top-10">← Back to DevEngine POS</button><div className="w-full max-w-[460px]"><div className="mb-8 lg:hidden"><DevEnginePosWordmark /></div><div className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_24px_70px_rgba(15,23,42,0.10)] sm:p-9"><div className="flex items-start justify-between gap-4"><div><div className="text-[11px] font-bold uppercase tracking-[0.15em] text-red-600">Workspace access</div><h2 className="mt-2 text-[29px] font-black tracking-tight">Sign in</h2><p className="mt-2 text-[13px] leading-relaxed text-slate-500">{businessName} workspace</p></div><span className="flex h-10 min-w-10 items-center justify-center rounded-xl bg-slate-950 px-2 text-[11px] font-bold text-white">POS</span></div>{pending && <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-[12px] leading-relaxed text-amber-900"><span className="font-bold">Registration under review.</span> Your business profile and verification documents are waiting for DevEngine POS Super Admin approval. You can return here once activation is confirmed.</div>}<div className="mt-7 space-y-4"><div><label className="mb-2 block text-[12px] font-semibold text-slate-600">Work email</label><input value={email} onChange={event => { setEmail(event.target.value); setError(""); }} type="email" placeholder="you@business.com" className="h-12 w-full rounded-xl border border-slate-200 px-3.5 text-[14px] outline-none transition focus:border-slate-950 focus:ring-4 focus:ring-slate-950/5" /></div><div><div className="mb-2 flex items-center justify-between"><label className="text-[12px] font-semibold text-slate-600">Password</label><button className="text-[12px] font-semibold text-slate-950 hover:underline">Forgot password?</button></div><input value={password} onChange={event => { setPassword(event.target.value); setError(""); }} type="password" placeholder="••••••••" className="h-12 w-full rounded-xl border border-slate-200 px-3.5 text-[14px] outline-none transition focus:border-slate-950 focus:ring-4 focus:ring-slate-950/5" /></div>{error && <p className="text-[12px] font-medium text-red-600">{error}</p>}<button onClick={signIn} className="h-12 w-full rounded-xl bg-slate-950 text-[14px] font-bold text-white shadow-lg shadow-slate-950/15 transition hover:bg-red-700">Sign in to workspace →</button></div><div className="my-6 flex items-center gap-3 text-[11px] text-slate-400 before:h-px before:flex-1 before:bg-slate-200 after:h-px after:flex-1 after:bg-slate-200">or</div><button onClick={onRegister} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[13px] font-bold text-slate-800 transition hover:border-red-300 hover:bg-red-50">Register a new business on DevEngine POS</button><p className="mt-5 text-center text-[11px] leading-relaxed text-slate-400">Workspace owners approve team access. Platform account activation is handled by DevEngine POS Super Admin.</p></div></div></section></div></main>;
+  return <main className="min-h-[100dvh] bg-[#f8fafc] text-slate-950"><div className="grid min-h-[100dvh] lg:grid-cols-[0.9fr_1.1fr]"><aside className="relative hidden overflow-hidden bg-slate-950 p-12 text-white lg:flex lg:flex-col"><div className="absolute inset-0 auth-grid opacity-30" /><div className="relative"><div><DevEngineLogo tone="light" className="w-[205px]" /></div><div className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-red-300">Secure business workspace</div></div><div className="relative my-auto max-w-xl"><h1 className="text-[clamp(3rem,5vw,5.8rem)] font-black leading-[0.9] tracking-[-0.07em]">Your business.<br />One clear system.</h1><p className="mt-7 max-w-md text-[17px] leading-relaxed text-slate-300">Sign in to your private DevEngine POS workspace to manage daily operations, teams, branches and subscriptions.</p><div className="mt-8 flex items-center gap-3 text-[13px] text-slate-400"><span className="h-2 w-2 rounded-full bg-red-400" />Tenant-separated access and role-based permissions</div></div><div className="relative text-[12px] text-slate-400">© {new Date().getFullYear()} DevEngine POS · Built by DevEngine</div></aside><section className="relative flex min-h-[100dvh] items-center justify-center p-5 sm:p-10"><button onClick={onBack} className="absolute left-5 top-5 rounded-full border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold shadow-sm transition hover:border-slate-950 sm:left-10 sm:top-10">← Back to DevEngine POS</button><div className="w-full max-w-[460px]"><div className="mb-8 lg:hidden"><DevEnginePosWordmark /></div><div className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_24px_70px_rgba(15,23,42,0.10)] sm:p-9"><div className="flex items-start justify-between gap-4"><div><div className="text-[11px] font-bold uppercase tracking-[0.15em] text-red-600">Workspace access</div><h2 className="mt-2 text-[29px] font-black tracking-tight">Sign in</h2><p className="mt-2 text-[13px] leading-relaxed text-slate-500">{businessName} workspace</p></div><span className="flex h-10 min-w-10 items-center justify-center rounded-xl bg-slate-950 px-2 text-[11px] font-bold text-white">POS</span></div>{pending && <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-[12px] leading-relaxed text-amber-900"><span className="font-bold">Registration under review.</span> Your business profile and verification documents are waiting for DevEngine POS Super Admin approval. You can return here once activation is confirmed.</div>}<div className="mt-7 space-y-4"><div><label className="mb-2 block text-[12px] font-semibold text-slate-600">Work email</label><input value={email} onChange={event => { setEmail(event.target.value); setError(""); }} type="email" placeholder="you@business.com" className="h-12 w-full rounded-xl border border-slate-200 px-3.5 text-[14px] outline-none transition focus:border-slate-950 focus:ring-4 focus:ring-slate-950/5" /></div><div><div className="mb-2 flex items-center justify-between"><label className="text-[12px] font-semibold text-slate-600">Password</label><button className="text-[12px] font-semibold text-slate-950 hover:underline">Forgot password?</button></div><input value={password} onChange={event => { setPassword(event.target.value); setError(""); }} type="password" placeholder="••••••••" className="h-12 w-full rounded-xl border border-slate-200 px-3.5 text-[14px] outline-none transition focus:border-slate-950 focus:ring-4 focus:ring-slate-950/5" /></div>{error && <p className="text-[12px] font-medium text-red-600">{error}</p>}<button onClick={signIn} className="h-12 w-full rounded-xl bg-slate-950 text-[14px] font-bold text-white shadow-lg shadow-slate-950/15 transition hover:bg-red-700">Sign in to workspace →</button></div><div className="my-6 flex items-center gap-3 text-[11px] text-slate-400 before:h-px before:flex-1 before:bg-slate-200 after:h-px after:flex-1 after:bg-slate-200">or</div><button onClick={onRegister} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[13px] font-bold text-slate-800 transition hover:border-red-300 hover:bg-red-50">Register a new business on DevEngine POS</button><p className="mt-5 text-center text-[11px] leading-relaxed text-slate-400">Workspace owners approve team access. Platform account activation is handled by DevEngine POS Super Admin.</p></div></div></section></div></main>;
 }
 
 function RegistrationJourneyPreview() {
@@ -968,7 +1073,7 @@ function TenantWorkspaceSignInV2({ tenant, onSuccess, onBack, onRegister }: { te
   const pending = new URLSearchParams(window.location.search).get("pending") === "true";
   const businessName = tenant === "your-business" ? "Your business" : tenant.replace(/-/g, " ").replace(/\b\w/g, letter => letter.toUpperCase());
   const signIn = () => { if (!email || !password) { setError("Enter your work email and password to continue."); return; } onSuccess(); };
-  return <main className="min-h-[100dvh] overflow-x-hidden bg-slate-50 text-slate-950"><div className="grid min-h-[100dvh] lg:grid-cols-[1.04fr_0.96fr]"><aside className="relative order-2 flex flex-col overflow-hidden bg-slate-950 p-6 text-white sm:p-10 lg:order-1 lg:p-12"><div className="absolute inset-0 auth-grid" /><div className="relative"><div className="rounded-xl bg-white/5 p-3"><DevEngineLogo className="w-[205px]" /></div><div className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-300">Secure business workspace</div></div><div className="relative my-auto py-8 lg:py-6"><AuthProductShowcase /><h1 className="mt-7 max-w-2xl text-[clamp(2.4rem,4.6vw,5.4rem)] font-black leading-[0.9] tracking-[-0.07em]">Your business.<br />One clear system.</h1><p className="mt-4 max-w-xl text-[15px] leading-relaxed text-slate-300 sm:text-[16px]">A fast product preview of registration, stock control and checkout—built into every DevEngine POS workspace.</p></div><div className="relative text-[12px] text-slate-400">© {new Date().getFullYear()} DevEngine POS · Built by DevEngine</div></aside><section className="relative order-1 flex min-h-[100dvh] items-center justify-center p-5 sm:p-10 lg:order-2"><button onClick={onBack} className="absolute left-5 top-5 rounded-full border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold shadow-sm transition hover:border-slate-950 sm:left-10 sm:top-10">← Back to DevEngine POS</button><div className="w-full max-w-[460px]"><div className="mb-8 lg:hidden"><DevEnginePosWordmark /></div><div className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_24px_70px_rgba(15,23,42,0.10)] sm:p-9"><div className="flex items-start justify-between gap-4"><div><div className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-600">Workspace access</div><h2 className="mt-2 text-[29px] font-black tracking-tight">Sign in</h2><p className="mt-2 text-[13px] leading-relaxed text-slate-500">{businessName} workspace</p></div><span className="flex h-10 min-w-10 items-center justify-center rounded-xl bg-slate-950 px-2 text-[11px] font-bold text-white">POS</span></div>{pending && <div className="mt-6 rounded-xl border border-slate-300 bg-slate-50 p-4 text-[12px] leading-relaxed text-slate-700"><span className="font-bold">Registration under review.</span> Your business profile and verification documents are waiting for DevEngine POS Super Admin approval.</div>}<div className="mt-7 space-y-4"><Input label="Work email" value={email} onChange={event => { setEmail(event.target.value); setError(""); }} type="email" placeholder="you@business.com" /><div><div className="mb-2 flex items-center justify-between"><label className="text-[12px] font-semibold text-slate-600">Password</label><button className="text-[12px] font-semibold text-slate-950 hover:underline">Forgot password?</button></div><input value={password} onChange={event => { setPassword(event.target.value); setError(""); }} type="password" placeholder="••••••••" className="h-12 w-full rounded-xl border border-slate-200 px-3.5 text-[14px] outline-none transition focus:border-slate-950 focus:ring-4 focus:ring-slate-950/5" /></div>{error && <p className="text-[12px] font-medium text-slate-700">{error}</p>}<button onClick={signIn} className="h-12 w-full rounded-xl bg-slate-950 text-[14px] font-bold text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800">Sign in to workspace →</button></div><div className="my-6 flex items-center gap-3 text-[11px] text-slate-400 before:h-px before:flex-1 before:bg-slate-200 after:h-px after:flex-1 after:bg-slate-200">or</div><button onClick={onRegister} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[13px] font-bold text-slate-800 transition hover:border-slate-950 hover:bg-slate-50">Register a new business on DevEngine POS</button><p className="mt-5 text-center text-[11px] leading-relaxed text-slate-400">Workspace owners approve team access. Platform account activation is handled by DevEngine POS Super Admin.</p></div></div></section></div></main>;
+  return <main className="min-h-[100dvh] overflow-x-hidden bg-slate-50 text-slate-950"><div className="grid min-h-[100dvh] lg:grid-cols-[1.04fr_0.96fr]"><aside className="relative order-2 flex flex-col overflow-hidden bg-slate-950 p-6 text-white sm:p-10 lg:order-1 lg:p-12"><div className="absolute inset-0 auth-grid" /><div className="relative"><div><DevEngineLogo tone="light" className="w-[205px]" /></div><div className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-300">Secure business workspace</div></div><div className="relative my-auto py-8 lg:py-6"><AuthProductShowcase /><h1 className="mt-7 max-w-2xl text-[clamp(2.4rem,4.6vw,5.4rem)] font-black leading-[0.9] tracking-[-0.07em]">Your business.<br />One clear system.</h1><p className="mt-4 max-w-xl text-[15px] leading-relaxed text-slate-300 sm:text-[16px]">A fast product preview of registration, stock control and checkout—built into every DevEngine POS workspace.</p></div><div className="relative text-[12px] text-slate-400">© {new Date().getFullYear()} DevEngine POS · Built by DevEngine</div></aside><section className="relative order-1 flex min-h-[100dvh] items-center justify-center p-5 sm:p-10 lg:order-2"><button onClick={onBack} className="absolute left-5 top-5 rounded-full border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold shadow-sm transition hover:border-slate-950 sm:left-10 sm:top-10">← Back to DevEngine POS</button><div className="w-full max-w-[460px]"><div className="mb-8 lg:hidden"><DevEnginePosWordmark /></div><div className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_24px_70px_rgba(15,23,42,0.10)] sm:p-9"><div className="flex items-start justify-between gap-4"><div><div className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-600">Workspace access</div><h2 className="mt-2 text-[29px] font-black tracking-tight">Sign in</h2><p className="mt-2 text-[13px] leading-relaxed text-slate-500">{businessName} workspace</p></div><span className="flex h-10 min-w-10 items-center justify-center rounded-xl bg-slate-950 px-2 text-[11px] font-bold text-white">POS</span></div>{pending && <div className="mt-6 rounded-xl border border-slate-300 bg-slate-50 p-4 text-[12px] leading-relaxed text-slate-700"><span className="font-bold">Registration under review.</span> Your business profile and verification documents are waiting for DevEngine POS Super Admin approval.</div>}<div className="mt-7 space-y-4"><Input label="Work email" value={email} onChange={event => { setEmail(event.target.value); setError(""); }} type="email" placeholder="you@business.com" /><div><div className="mb-2 flex items-center justify-between"><label className="text-[12px] font-semibold text-slate-600">Password</label><button className="text-[12px] font-semibold text-slate-950 hover:underline">Forgot password?</button></div><input value={password} onChange={event => { setPassword(event.target.value); setError(""); }} type="password" placeholder="••••••••" className="h-12 w-full rounded-xl border border-slate-200 px-3.5 text-[14px] outline-none transition focus:border-slate-950 focus:ring-4 focus:ring-slate-950/5" /></div>{error && <p className="text-[12px] font-medium text-slate-700">{error}</p>}<button onClick={signIn} className="h-12 w-full rounded-xl bg-slate-950 text-[14px] font-bold text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800">Sign in to workspace →</button></div><div className="my-6 flex items-center gap-3 text-[11px] text-slate-400 before:h-px before:flex-1 before:bg-slate-200 after:h-px after:flex-1 after:bg-slate-200">or</div><button onClick={onRegister} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[13px] font-bold text-slate-800 transition hover:border-slate-950 hover:bg-slate-50">Register a new business on DevEngine POS</button><p className="mt-5 text-center text-[11px] leading-relaxed text-slate-400">Workspace owners approve team access. Platform account activation is handled by DevEngine POS Super Admin.</p></div></div></section></div></main>;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -5933,7 +6038,7 @@ function SettingsPage({ onNavigate: _, guestApp, onGuestAppChange }: { onNavigat
         </div>
       );
 
-      case "public-site": return (
+      case "public-site" as SettingsSection: return (
         <div className="space-y-4">
           <SettingsSectionCard title="Landing page footer">
             <div className="rounded-xl border border-[var(--border)] bg-[var(--secondary)] p-4"><div className="flex items-start justify-between gap-4"><div><div className="text-[13px] font-semibold text-[var(--foreground)]">Public information centre</div><p className="mt-1 text-[12px] leading-relaxed text-[var(--muted-foreground)]">Manage the company, support and legal destinations shown in the public landing-page footer.</p></div><Badge variant="success" dot>Published</Badge></div></div>
@@ -6154,28 +6259,182 @@ function SubscriptionCheckout({ initialPlan, onBack, onComplete }: { initialPlan
   const steps = ["Plan", "Business", "Payment", "Review"];
   const selected = saasPlans.find(item => item.id === plan) || saasPlans[1];
   const next = () => step < 3 ? setStep(step + 1) : onComplete(business.slug || "my-business");
-  return <main className="min-h-[100dvh] bg-slate-950 px-5 py-8 text-white sm:p-10"><div className="mx-auto max-w-[1100px]"><button onClick={step === 0 ? onBack : () => setStep(step - 1)} className="flex items-center gap-2 text-[13px] font-semibold text-slate-300 hover:text-white">← {step === 0 ? "Back to DevEngine" : "Previous step"}</button><div className="mt-8 grid gap-10 lg:grid-cols-[0.8fr_1.2fr]"><aside className="pt-2"><DevEngineLogo className="w-[220px]" /><div className="mt-12 text-[12px] font-bold uppercase tracking-[0.16em] text-cyan-300">DevEngine onboarding</div><h1 className="mt-4 text-[clamp(2.8rem,5vw,4.6rem)] font-black leading-[0.92] tracking-[-0.06em]">Launch your retail workspace.</h1><p className="mt-5 max-w-md text-[16px] leading-relaxed text-slate-300">Set up your business, secure its own URL, select billing and activate a ready-to-configure POS workspace.</p><div className="mt-10 space-y-4">{steps.map((label, index) => <button key={label} onClick={() => index <= step && setStep(index)} className={`flex w-full items-center gap-3 text-left text-[13px] ${index === step ? "text-white" : index < step ? "text-cyan-300" : "text-slate-500"}`}><span className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ${index === step ? "bg-cyan-400 text-slate-950" : index < step ? "bg-cyan-400/15 text-cyan-300" : "bg-white/10 text-slate-400"}`}>{index < step ? "✓" : index + 1}</span>{label}</button>)}</div><div className="mt-10 rounded-xl border border-white/10 bg-white/[0.05] p-4 text-[12px] leading-relaxed text-slate-300">Your subscription is managed by DevEngine. Payment capture, invoices and production activation are represented here as a complete UI flow; secure provider processing is added with the backend.</div></aside><section className="rounded-[28px] bg-white p-6 text-slate-950 shadow-2xl sm:p-8"><div className="text-[12px] font-bold uppercase tracking-[0.15em] text-slate-500">Step {step + 1} of 4</div>{step === 0 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Choose your plan</h2><p className="mt-2 text-[13px] text-slate-500">You can upgrade or add branch capacity later.</p><div className="mt-6 space-y-3">{saasPlans.map(item => <button key={item.id} onClick={() => setPlan(item.id)} className={`flex w-full items-center justify-between rounded-xl border p-4 text-left transition ${plan === item.id ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 hover:border-slate-400"}`}><span><span className="block text-[15px] font-bold">{item.name}</span><span className={`mt-1 block text-[12px] ${plan === item.id ? "text-white/70" : "text-slate-500"}`}>{item.locations}</span></span><span className="text-[15px] font-bold">{item.price}{item.price === "Custom" ? "" : "/mo"}</span></button>)}</div></>}{step === 1 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Your business workspace</h2><p className="mt-2 text-[13px] text-slate-500">This creates an independent tenant boundary for your business.</p><div className="mt-6 grid gap-4 sm:grid-cols-2"><Input label="Business name" value={business.name} onChange={e => setBusiness({ ...business, name: e.target.value })} placeholder="Your retail business" /><Input label="Owner name" value={business.owner} onChange={e => setBusiness({ ...business, owner: e.target.value })} placeholder="Full name" /><Input label="Work email" type="email" value={business.email} onChange={e => setBusiness({ ...business, email: e.target.value })} placeholder="you@business.com" /><Input label="First branch" value={business.branch} onChange={e => setBusiness({ ...business, branch: e.target.value })} /><div className="sm:col-span-2"><Input label="Your workspace URL" value={business.slug} onChange={e => setBusiness({ ...business, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") })} iconRight={<span className="text-[11px] text-slate-400">/login</span>} /><p className="mt-2 text-[11px] text-slate-500">Your staff will sign in at <span className="font-semibold text-slate-700">/{business.slug || "your-business"}/login</span>.</p></div></div></>}{step === 2 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Payment details</h2><p className="mt-2 text-[13px] text-slate-500">No payment is charged during your 14-day trial.</p><div className="mt-6 grid gap-3 sm:grid-cols-3">{[{ id: "card", label: "Card" }, { id: "bkash", label: "bKash" }, { id: "bank", label: "Bank transfer" }].map(method => <button key={method.id} onClick={() => setPayment(method.id)} className={`rounded-xl border px-4 py-3 text-[13px] font-bold ${payment === method.id ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200"}`}>{method.label}</button>)}</div><div className="mt-6 space-y-4 rounded-xl bg-slate-50 p-5"><Input label={payment === "card" ? "Card number" : payment === "bkash" ? "bKash number" : "Bank account reference"} placeholder={payment === "card" ? "4242 4242 4242 4242" : "Enter payment account"} /><div className="grid grid-cols-2 gap-4"><Input label="Billing name" placeholder="Business owner" /><Input label="Billing address" placeholder="Dhaka, Bangladesh" /></div></div><label className="mt-5 flex gap-3 text-[12px] leading-relaxed text-slate-600"><input type="checkbox" className="mt-0.5" defaultChecked />I authorise DevEngine to charge the selected plan after the trial unless I cancel before renewal.</label></>}{step === 3 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Review and activate</h2><div className="mt-6 space-y-3 rounded-xl bg-slate-50 p-5 text-[13px]"><div className="flex justify-between"><span className="text-slate-500">Plan</span><span className="font-bold">{selected.name} · {selected.price}{selected.price === "Custom" ? "" : "/month"}</span></div><div className="flex justify-between"><span className="text-slate-500">Business</span><span className="font-bold">{business.name || "Your retail business"}</span></div><div className="flex justify-between"><span className="text-slate-500">Workspace URL</span><span className="font-bold">/{business.slug || "my-business"}/login</span></div><div className="flex justify-between"><span className="text-slate-500">Payment method</span><span className="font-bold capitalize">{payment}</span></div></div><div className="mt-5 rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-[12px] leading-relaxed text-cyan-900"><span className="font-bold">Trial starts today.</span> You will receive an invoice and activation email before any plan payment is collected.</div></>}</section></div><div className="mx-auto mt-6 flex max-w-[660px] justify-end"><button onClick={next} className="rounded-xl bg-cyan-400 px-6 py-3.5 text-[14px] font-bold text-slate-950 transition hover:bg-cyan-300">{step === 3 ? "Activate workspace →" : "Continue →"}</button></div></div></main>;
+  return <main className="min-h-[100dvh] bg-slate-950 px-5 py-8 text-white sm:p-10"><div className="mx-auto max-w-[1100px]"><button onClick={step === 0 ? onBack : () => setStep(step - 1)} className="flex items-center gap-2 text-[13px] font-semibold text-slate-300 hover:text-white">← {step === 0 ? "Back to DevEngine" : "Previous step"}</button><div className="mt-8 grid gap-10 lg:grid-cols-[0.8fr_1.2fr]"><aside className="pt-2"><DevEngineLogo tone="light" className="w-[220px]" /><div className="mt-12 text-[12px] font-bold uppercase tracking-[0.16em] text-cyan-300">DevEngine onboarding</div><h1 className="mt-4 text-[clamp(2.8rem,5vw,4.6rem)] font-black leading-[0.92] tracking-[-0.06em]">Launch your retail workspace.</h1><p className="mt-5 max-w-md text-[16px] leading-relaxed text-slate-300">Set up your business, secure its own URL, select billing and activate a ready-to-configure POS workspace.</p><div className="mt-10 space-y-4">{steps.map((label, index) => <button key={label} onClick={() => index <= step && setStep(index)} className={`flex w-full items-center gap-3 text-left text-[13px] ${index === step ? "text-white" : index < step ? "text-cyan-300" : "text-slate-500"}`}><span className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ${index === step ? "bg-cyan-400 text-slate-950" : index < step ? "bg-cyan-400/15 text-cyan-300" : "bg-white/10 text-slate-400"}`}>{index < step ? "✓" : index + 1}</span>{label}</button>)}</div><div className="mt-10 rounded-xl border border-white/10 bg-white/[0.05] p-4 text-[12px] leading-relaxed text-slate-300">Your subscription is managed by DevEngine. Payment capture, invoices and production activation are represented here as a complete UI flow; secure provider processing is added with the backend.</div></aside><section className="rounded-[28px] bg-white p-6 text-slate-950 shadow-2xl sm:p-8"><div className="text-[12px] font-bold uppercase tracking-[0.15em] text-slate-500">Step {step + 1} of 4</div>{step === 0 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Choose your plan</h2><p className="mt-2 text-[13px] text-slate-500">You can upgrade or add branch capacity later.</p><div className="mt-6 space-y-3">{saasPlans.map(item => <button key={item.id} onClick={() => setPlan(item.id)} className={`flex w-full items-center justify-between rounded-xl border p-4 text-left transition ${plan === item.id ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 hover:border-slate-400"}`}><span><span className="block text-[15px] font-bold">{item.name}</span><span className={`mt-1 block text-[12px] ${plan === item.id ? "text-white/70" : "text-slate-500"}`}>{item.locations}</span></span><span className="text-[15px] font-bold">{item.price}{item.price === "Custom" ? "" : "/mo"}</span></button>)}</div></>}{step === 1 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Your business workspace</h2><p className="mt-2 text-[13px] text-slate-500">This creates an independent tenant boundary for your business.</p><div className="mt-6 grid gap-4 sm:grid-cols-2"><Input label="Business name" value={business.name} onChange={e => setBusiness({ ...business, name: e.target.value })} placeholder="Your retail business" /><Input label="Owner name" value={business.owner} onChange={e => setBusiness({ ...business, owner: e.target.value })} placeholder="Full name" /><Input label="Work email" type="email" value={business.email} onChange={e => setBusiness({ ...business, email: e.target.value })} placeholder="you@business.com" /><Input label="First branch" value={business.branch} onChange={e => setBusiness({ ...business, branch: e.target.value })} /><div className="sm:col-span-2"><Input label="Your workspace URL" value={business.slug} onChange={e => setBusiness({ ...business, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") })} iconRight={<span className="text-[11px] text-slate-400">/login</span>} /><p className="mt-2 text-[11px] text-slate-500">Your staff will sign in at <span className="font-semibold text-slate-700">/{business.slug || "your-business"}/login</span>.</p></div></div></>}{step === 2 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Payment details</h2><p className="mt-2 text-[13px] text-slate-500">No payment is charged during your 14-day trial.</p><div className="mt-6 grid gap-3 sm:grid-cols-3">{[{ id: "card", label: "Card" }, { id: "bkash", label: "bKash" }, { id: "bank", label: "Bank transfer" }].map(method => <button key={method.id} onClick={() => setPayment(method.id)} className={`rounded-xl border px-4 py-3 text-[13px] font-bold ${payment === method.id ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200"}`}>{method.label}</button>)}</div><div className="mt-6 space-y-4 rounded-xl bg-slate-50 p-5"><Input label={payment === "card" ? "Card number" : payment === "bkash" ? "bKash number" : "Bank account reference"} placeholder={payment === "card" ? "4242 4242 4242 4242" : "Enter payment account"} /><div className="grid grid-cols-2 gap-4"><Input label="Billing name" placeholder="Business owner" /><Input label="Billing address" placeholder="Dhaka, Bangladesh" /></div></div><label className="mt-5 flex gap-3 text-[12px] leading-relaxed text-slate-600"><input type="checkbox" className="mt-0.5" defaultChecked />I authorise DevEngine to charge the selected plan after the trial unless I cancel before renewal.</label></>}{step === 3 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Review and activate</h2><div className="mt-6 space-y-3 rounded-xl bg-slate-50 p-5 text-[13px]"><div className="flex justify-between"><span className="text-slate-500">Plan</span><span className="font-bold">{selected.name} · {selected.price}{selected.price === "Custom" ? "" : "/month"}</span></div><div className="flex justify-between"><span className="text-slate-500">Business</span><span className="font-bold">{business.name || "Your retail business"}</span></div><div className="flex justify-between"><span className="text-slate-500">Workspace URL</span><span className="font-bold">/{business.slug || "my-business"}/login</span></div><div className="flex justify-between"><span className="text-slate-500">Payment method</span><span className="font-bold capitalize">{payment}</span></div></div><div className="mt-5 rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-[12px] leading-relaxed text-cyan-900"><span className="font-bold">Trial starts today.</span> You will receive an invoice and activation email before any plan payment is collected.</div></>}</section></div><div className="mx-auto mt-6 flex max-w-[660px] justify-end"><button onClick={next} className="rounded-xl bg-cyan-400 px-6 py-3.5 text-[14px] font-bold text-slate-950 transition hover:bg-cyan-300">{step === 3 ? "Activate workspace →" : "Continue →"}</button></div></div></main>;
 }
 
-function StartTrialPage({ onBack, onContinue }: { onBack: () => void; onContinue: (slug: string) => void }) {
+function StartTrialPage({
+  onBack,
+  onContinue,
+  livePlans,
+  onRegisterTenant,
+}: {
+  onBack: () => void;
+  onContinue: (slug: string) => void;
+  livePlans?: PlatformPlan[];
+  onRegisterTenant?: (tenant: PlatformTenant) => void;
+}) {
   const initialPlan = new URLSearchParams(window.location.search).get("plan") || "growth";
-  const [plan, setPlan] = useState(initialPlan);
-  return <BusinessRegistrationWizard initialPlan={plan} onBack={onBack} onComplete={onContinue} />;
-  return <main className="min-h-[100dvh] bg-slate-950 px-5 py-8 text-white sm:p-10"><div className="mx-auto max-w-[1080px]"><button onClick={onBack} className="flex items-center gap-2 text-[13px] font-semibold text-slate-300 hover:text-white">← Back to Selim</button><div className="mt-10 grid gap-10 lg:grid-cols-[0.9fr_1.1fr]"><div><LandscapeLogo tone="light" size="standard" /><div className="mt-12 text-[12px] font-bold uppercase tracking-[0.16em] text-emerald-400">14-day free trial</div><h1 className="mt-4 text-[clamp(2.8rem,5vw,4.7rem)] font-black leading-[0.92] tracking-[-0.06em]">Build the retail operation you deserve.</h1><p className="mt-5 max-w-md text-[16px] leading-relaxed text-slate-300">Set up your business, first branch and workspace. No payment required to start your trial.</p><div className="mt-8 space-y-3 text-[13px] text-slate-200">{["Choose a plan that fits your operation", "Create your organisation and first branch", "Invite your team when you are ready"].map(text => <div key={text} className="flex gap-3"><span className="text-emerald-400">✓</span>{text}</div>)}</div></div><div className="rounded-[28px] bg-white p-6 text-slate-950 shadow-2xl sm:p-8"><div className="text-[12px] font-bold uppercase tracking-[0.15em] text-slate-500">Create your workspace</div><h2 className="mt-2 text-[27px] font-bold tracking-tight">Start your trial</h2><div className="mt-6 grid gap-3 sm:grid-cols-3">{saasPlans.map(item => <button key={item.id} onClick={() => setPlan(item.id)} className={`rounded-xl border p-3 text-left transition ${plan === item.id ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 hover:border-slate-400"}`}><div className="text-[12px] font-bold">{item.name}</div><div className={`mt-1 text-[11px] ${plan === item.id ? "text-white/70" : "text-slate-500"}`}>{item.locations}</div></button>)}</div><div className="mt-6 grid gap-4 sm:grid-cols-2"><Input label="Business name" placeholder="Your retail business" /><SelectField label="Business type" value="Retail store" onChange={() => {}} options={[{ value: "Retail store", label: "Retail store" }, { value: "Electronics", label: "Electronics" }, { value: "Fashion", label: "Fashion" }, { value: "Pharmacy", label: "Pharmacy" }]} /><Input label="Owner name" placeholder="Full name" /><Input label="Work email" type="email" placeholder="you@business.com" /><Input label="First branch name" placeholder="Main Store" /><Input label="Country / currency" value="Bangladesh · BDT" readOnly /></div><div className="mt-6 rounded-xl bg-slate-50 p-4 text-[12px] leading-relaxed text-slate-600"><span className="font-semibold text-slate-950">Selected: {saasPlans.find(item => item.id === plan)?.name}</span> · Your trial includes the relevant workspace features. Payment and production account activation will be connected in the backend phase.</div><button onClick={onContinue} className="mt-6 w-full rounded-xl bg-slate-950 px-5 py-3.5 text-[14px] font-bold text-white transition hover:bg-slate-800">Create trial workspace →</button><p className="mt-4 text-center text-[11px] leading-relaxed text-slate-500">By continuing, you agree to the Terms of Service and Privacy Policy.</p></div></div></div></main>;
+  const [plan] = useState(initialPlan);
+  return (
+    <BusinessRegistrationWizard
+      initialPlan={plan}
+      onBack={onBack}
+      onComplete={onContinue}
+      livePlans={livePlans}
+      onRegisterTenant={onRegisterTenant}
+    />
+  );
 }
 
-function BusinessRegistrationWizard({ initialPlan, onBack, onComplete }: { initialPlan: string; onBack: () => void; onComplete: (slug: string) => void }) {
+function BusinessRegistrationWizard({
+  initialPlan,
+  onBack,
+  onComplete,
+  livePlans,
+  onRegisterTenant,
+}: {
+  initialPlan: string;
+  onBack: () => void;
+  onComplete: (slug: string) => void;
+  livePlans?: PlatformPlan[];
+  onRegisterTenant?: (tenant: PlatformTenant) => void;
+}) {
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [plan, setPlan] = useState(initialPlan);
   const [payment, setPayment] = useState("trial");
-  const [business, setBusiness] = useState({ name: "", legalName: "", owner: "", email: "", phone: "", entity: "sole-proprietorship", country: "Bangladesh", currency: "BDT", branch: "Main Store", address: "", slug: "my-business", tradeLicense: "", taxId: "", vatBin: "" });
+  const [business, setBusiness] = useState({
+    name: "",
+    legalName: "",
+    owner: "",
+    email: "",
+    phone: "",
+    entity: "sole-proprietorship",
+    country: "Bangladesh",
+    currency: "BDT",
+    branch: "Main Store",
+    address: "",
+    slug: "my-business",
+    tradeLicense: "",
+    taxId: "",
+    vatBin: "",
+    incorporationNumber: "",
+    billingContact: "",
+    billingEmail: "",
+    paymentReference: "",
+    billingAddress: "",
+  });
+  const [docChecklist, setDocChecklist] = useState({
+    ownerId: true,
+    tradeLicense: false,
+    addressProof: false,
+    taxCert: false,
+  });
+  const [authorizedConfirmed, setAuthorizedConfirmed] = useState(true);
   const steps = ["Plan", "Account", "Business", "Compliance", "Billing", "Review"];
-  const selected = saasPlans.find(item => item.id === plan) || saasPlans[1];
+  const activePlanPool = livePlans && livePlans.length ? livePlans : saasPlans.map(item => ({
+    id: item.id as PlanId,
+    name: item.name,
+    price: item.price,
+    priceNumeric: item.price === "৳ 2,500" ? 2500 : item.price === "৳ 5,900" ? 5900 : 24000,
+    note: item.note,
+    locations: item.locations,
+    locationsCap: "3",
+    registersCap: "8",
+    staffCap: "10",
+    support: "Priority",
+    features: item.features,
+    includedModules: ["posCheckout", "customerCredit", "supplierPayables", "sslcommerzOnline"] as TenantModuleKey[],
+  }));
+  const selected = activePlanPool.find(item => item.id === plan) || activePlanPool[1] || activePlanPool[0];
   const setField = (field: keyof typeof business, value: string) => setBusiness(current => ({ ...current, [field]: value }));
-  const advance = () => step < steps.length - 1 ? setStep(step + 1) : setSubmitted(true);
+  const advance = () => {
+    if (step < steps.length - 1) {
+      setStep(step + 1);
+      return;
+    }
+    if (onRegisterTenant) {
+      const cleanSlug = (business.slug || "my-business").toLowerCase().replace(/[^a-z0-9-]/g, "-");
+      const planName = selected.name;
+      const maxBranches = planName === "Scale" ? 25 : planName === "Growth" ? 3 : 1;
+      const maxRegisters = planName === "Scale" ? 50 : planName === "Growth" ? 8 : 2;
+      const maxStaff = planName === "Scale" ? 120 : planName === "Growth" ? 10 : 3;
+      onRegisterTenant({
+        id: `${cleanSlug}-${Date.now().toString().slice(-4)}`,
+        name: business.name.trim() || "New Retail Business",
+        slug: cleanSlug,
+        owner: business.owner.trim() || "Workspace Owner",
+        email: business.email.trim() || `owner@${cleanSlug}.com`,
+        phone: business.phone.trim() || "+880 1700 000000",
+        city: business.address.trim() || "Dhaka",
+        country: business.country || "Bangladesh",
+        entityType: business.entity || "sole-proprietorship",
+        tradeLicense: business.tradeLicense.trim() || "Pending submission",
+        vatBin: business.vatBin.trim() || "Pending submission",
+        registration: {
+          legalName: business.legalName.trim() || business.name.trim() || "Not provided",
+          currency: business.currency || "BDT",
+          firstBranchName: business.branch.trim() || "Main Store",
+          businessAddress: business.address.trim() || "Not provided",
+          taxId: business.taxId.trim() || "Not provided",
+          incorporationNumber: business.incorporationNumber.trim() || "Not provided",
+          billingMethod: payment,
+          billingContact: business.billingContact.trim() || business.owner.trim() || "Not provided",
+          billingEmail: business.billingEmail.trim() || business.email.trim() || "Not provided",
+          paymentReference: business.paymentReference.trim() || (payment === "trial" ? "14-day Free Trial" : "Pending capture"),
+          billingAddress: business.billingAddress.trim() || business.address.trim() || "Not provided",
+          submittedAt: new Date().toLocaleString(),
+          authorizedConfirmed,
+        },
+        plan: planName,
+        status: payment === "trial" ? "Trialing" : "Pending",
+        verification: "Awaiting review",
+        verificationNote: `Registered via /signup (${payment} billing preference).`,
+        docs: {
+          ownerId: docChecklist.ownerId,
+          tradeLicense: docChecklist.tradeLicense || Boolean(business.tradeLicense.trim()),
+          addressProof: docChecklist.addressProof || Boolean(business.address.trim()),
+          taxCert: docChecklist.taxCert || Boolean(business.vatBin.trim() || business.taxId.trim()),
+        },
+        branches: 1,
+        maxBranches,
+        registers: 1,
+        maxRegisters,
+        staff: 1,
+        maxStaff,
+        skusCount: 0,
+        monthlySalesBdt: 0,
+        onlineOrdersCount: 0,
+        mrr: selected.price === "Custom" ? "৳ 24,000" : selected.price,
+        mrrNumeric: selected.priceNumeric || 0,
+        access: false,
+        maintenance: false,
+        joinedAt: "Just now",
+        modules: {
+          posCheckout: true,
+          multiBranch: planName !== "Starter",
+          storefront: planName !== "Starter",
+          delivery: planName !== "Starter",
+          supplierPayables: true,
+          customerCredit: true,
+          advancedReports: planName === "Scale",
+          guestAppAddon: false,
+          sslcommerzOnline: true,
+        },
+        policy: {
+          allowNegativeStock: false,
+          requireAdjustmentApproval: true,
+          allowCustomerDue: true,
+          enforceTwoStepStaff: planName !== "Starter",
+          invoicePrefix: `${cleanSlug.slice(0, 3).toUpperCase()}-2026`,
+          lowStockThreshold: 5,
+        },
+      });
+    }
+    setSubmitted(true);
+  };
   if (submitted) return <main className="min-h-[100dvh] bg-slate-950 px-5 py-10 text-white"><div className="mx-auto flex min-h-[80dvh] max-w-[680px] items-center"><section className="w-full rounded-[30px] bg-white p-8 text-slate-950 shadow-2xl sm:p-12"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-600 text-[24px] font-black text-white">✓</div><div className="mt-7 text-[12px] font-bold uppercase tracking-[0.16em] text-red-600">Registration submitted</div><h1 className="mt-3 text-[clamp(2.3rem,5vw,4rem)] font-black leading-[0.94] tracking-[-0.055em]">Your workspace is pending verification.</h1><p className="mt-5 max-w-xl text-[16px] leading-relaxed text-slate-600">DevEngine POS Super Admin will review your business profile, ownership declaration and compliance information before activating <strong>/{business.slug || "my-business"}/login</strong>.</p><div className="mt-7 grid gap-3 sm:grid-cols-3">{["Business profile received", "Compliance review pending", "Activation email to follow"].map((item, index) => <div key={item} className="rounded-xl bg-slate-50 p-4 text-[12px] font-semibold text-slate-700"><span className="mb-2 flex h-6 w-6 items-center justify-center rounded-full bg-slate-950 text-[10px] text-white">{index + 1}</span>{item}</div>)}</div><button onClick={() => onComplete(business.slug || "my-business")} className="mt-8 w-full rounded-xl bg-slate-950 px-5 py-3.5 text-[14px] font-bold text-white transition hover:bg-red-700">Go to workspace sign in →</button></section></div></main>;
-  return <main className="min-h-[100dvh] bg-slate-950 px-5 py-8 text-white sm:p-10"><div className="mx-auto max-w-[1140px]"><button onClick={step === 0 ? onBack : () => setStep(step - 1)} className="flex items-center gap-2 text-[13px] font-semibold text-slate-300 transition hover:text-white">← {step === 0 ? "Back to DevEngine POS" : "Previous step"}</button><div className="mt-8 grid gap-10 lg:grid-cols-[0.78fr_1.22fr]"><aside className="pt-2"><DevEngineLogo className="w-[220px]" /><RegistrationJourneyPreview /><div className="mt-8 text-[12px] font-bold uppercase tracking-[0.16em] text-slate-300">Your DevEngine POS launch</div><h1 className="mt-4 text-[clamp(2.8rem,5vw,4.6rem)] font-black leading-[0.92] tracking-[-0.06em]">Build the system your business grows into.</h1><p className="mt-5 max-w-md text-[16px] leading-relaxed text-slate-300">Create your independent business workspace, reserve its private URL, configure the first branch and submit the information needed to operate with confidence.</p><div className="mt-10 space-y-3">{steps.map((label, index) => <button key={label} onClick={() => index <= step && setStep(index)} className={`flex w-full items-center gap-3 text-left text-[13px] ${index === step ? "text-white" : index < step ? "text-red-300" : "text-slate-500"}`}><span className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ${index === step ? "bg-red-500 text-white" : index < step ? "bg-red-500/20 text-red-200" : "bg-white/10 text-slate-400"}`}>{index < step ? "✓" : index + 1}</span>{label}</button>)}</div><div className="mt-10 rounded-xl border border-white/10 bg-white/[0.05] p-4 text-[12px] leading-relaxed text-slate-300">Country-specific legal requirements differ. This registration records the information your DevEngine POS Super Admin needs to review; it does not replace legal, tax, licensing or payment-provider advice.</div></aside><section className="rounded-[28px] bg-white p-6 text-slate-950 shadow-2xl sm:p-8"><div className="text-[12px] font-bold uppercase tracking-[0.15em] text-slate-500">Step {step + 1} of {steps.length} · {steps[step]}</div>{step === 0 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Choose your plan</h2><p className="mt-2 text-[13px] text-slate-500">Choose the capacity that fits your operation today. You can request changes after verification.</p><div className="mt-6 space-y-3">{saasPlans.map(item => <button key={item.id} onClick={() => setPlan(item.id)} className={`flex w-full items-center justify-between rounded-xl border p-4 text-left transition ${plan === item.id ? "border-red-700 bg-red-700 text-white" : "border-slate-200 hover:border-slate-400"}`}><span><span className="block text-[15px] font-bold">{item.name}</span><span className={`mt-1 block text-[12px] ${plan === item.id ? "text-white/75" : "text-slate-500"}`}>{item.locations}</span></span><span className="text-[15px] font-bold">{item.price}{item.price === "Custom" ? "" : "/mo"}</span></button>)}</div></>}{step === 1 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Account owner</h2><p className="mt-2 text-[13px] text-slate-500">This person will be the initial authorised workspace owner.</p><div className="mt-6 grid gap-4 sm:grid-cols-2"><Input label="Full legal name" value={business.owner} onChange={event => setField("owner", event.target.value)} placeholder="As shown on ID" /><Input label="Work email" value={business.email} onChange={event => setField("email", event.target.value)} type="email" placeholder="owner@business.com" /><Input label="Mobile number" value={business.phone} onChange={event => setField("phone", event.target.value)} placeholder="With country code" /><SelectField label="Country / region" value={business.country} onChange={value => setField("country", value)} options={[{ value: "Bangladesh", label: "Bangladesh" }, { value: "Other", label: "Other / configure later" }]} /></div><label className="mt-5 flex gap-3 text-[12px] leading-relaxed text-slate-600"><input type="checkbox" className="mt-0.5" defaultChecked />I confirm I am authorised to create this business account and accept platform communications about its setup.</label></>}{step === 2 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Business and first location</h2><p className="mt-2 text-[13px] text-slate-500">Your organisation gets a private data boundary and a unique sign-in address.</p><div className="mt-6 grid gap-4 sm:grid-cols-2"><Input label="Trading / display name" value={business.name} onChange={event => setField("name", event.target.value)} placeholder="Your retail business" /><Input label="Registered legal name" value={business.legalName} onChange={event => setField("legalName", event.target.value)} placeholder="If different" /><SelectField label="Entity type" value={business.entity} onChange={value => setField("entity", value)} options={[{ value: "sole-proprietorship", label: "Sole proprietorship" }, { value: "partnership", label: "Partnership" }, { value: "limited-company", label: "Limited company" }, { value: "other", label: "Other legal entity" }]} /><SelectField label="Operating currency" value={business.currency} onChange={value => setField("currency", value)} options={[{ value: "BDT", label: "Bangladeshi Taka (BDT)" }, { value: "USD", label: "US Dollar (USD)" }, { value: "Other", label: "Other / configure later" }]} /><Input label="First branch / store name" value={business.branch} onChange={event => setField("branch", event.target.value)} /><Input label="Business address" value={business.address} onChange={event => setField("address", event.target.value)} placeholder="Street, city, country" /><div className="sm:col-span-2"><Input label="Choose your workspace URL" value={business.slug} onChange={event => setField("slug", event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} iconRight={<span className="text-[11px] text-slate-400">/login</span>} /><p className="mt-2 text-[11px] text-slate-500">Employees will use <span className="font-semibold text-slate-700">/{business.slug || "your-business"}/login</span> to access this workspace.</p></div></div></>}{step === 3 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Compliance and verification</h2><p className="mt-2 text-[13px] leading-relaxed text-slate-500">Provide identifiers and documents applicable to your jurisdiction. Required fields and approval rules are configured by DevEngine POS Super Admin.</p><div className="mt-6 grid gap-4 sm:grid-cols-2"><Input label="Trade / operating licence number" value={business.tradeLicense} onChange={event => setField("tradeLicense", event.target.value)} placeholder="If applicable" /><Input label="Taxpayer / tax ID" value={business.taxId} onChange={event => setField("taxId", event.target.value)} placeholder="If applicable" /><Input label="VAT / sales-tax registration" value={business.vatBin} onChange={event => setField("vatBin", event.target.value)} placeholder="If applicable" /><Input label="Registration / incorporation number" placeholder="If applicable" /></div><div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5"><div className="text-[13px] font-semibold">Document checklist</div><p className="mt-1 text-[12px] leading-relaxed text-slate-500">In production, Super Admin can require ownership ID, proof of business address, registration certificates, licence records and tax/VAT documentation based on country, entity type and industry.</p><div className="mt-4 grid gap-2 sm:grid-cols-2">{["Owner identity document", "Business registration / licence", "Proof of operating address", "Tax or VAT certificate"].map(item => <label key={item} className="flex items-center gap-2 rounded-lg bg-white px-3 py-2.5 text-[12px] font-medium text-slate-700"><input type="checkbox" />{item}</label>)}</div></div><label className="mt-5 flex gap-3 text-[12px] leading-relaxed text-slate-600"><input type="checkbox" className="mt-0.5" />I confirm this information is accurate and I am authorised to submit it for account verification.</label></>}{step === 4 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Trial and billing</h2><p className="mt-2 text-[13px] text-slate-500">Start a 14-day trial or set up a payment method for post-approval billing. No charge is captured in this UI preview.</p><div className="mt-6 grid gap-3 sm:grid-cols-2">{[{ id: "trial", label: "Start free trial", detail: "No payment today" }, { id: "card", label: "Add card", detail: "Billing after trial" }, { id: "bank", label: "Bank transfer", detail: "Invoice / sales approval" }, { id: "mobile", label: "Mobile wallet", detail: "Availability by market" }].map(method => <button key={method.id} onClick={() => setPayment(method.id)} className={`rounded-xl border p-4 text-left transition ${payment === method.id ? "border-red-700 bg-red-50" : "border-slate-200 hover:border-slate-400"}`}><div className="text-[13px] font-bold">{method.label}</div><div className="mt-1 text-[11px] text-slate-500">{method.detail}</div></button>)}</div>{payment !== "trial" && <div className="mt-5 grid gap-4 rounded-xl bg-slate-50 p-5 sm:grid-cols-2"><Input label="Billing contact" placeholder="Name on payment method" /><Input label="Billing email" placeholder="billing@business.com" /><Input label="Payment reference" placeholder="Secure provider added in backend" /><Input label="Billing address" placeholder="Street, city, country" /></div>}<label className="mt-5 flex gap-3 text-[12px] leading-relaxed text-slate-600"><input type="checkbox" className="mt-0.5" defaultChecked />I accept the selected plan, billing terms and authorise DevEngine POS to contact me about subscription setup.</label></>}{step === 5 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Review and submit</h2><p className="mt-2 text-[13px] text-slate-500">Your account is created as pending until DevEngine POS Super Admin completes the verification review.</p><div className="mt-6 space-y-3 rounded-xl bg-slate-50 p-5 text-[13px]"><div className="flex justify-between gap-5"><span className="text-slate-500">Plan</span><span className="text-right font-bold">{selected.name} · {selected.price}{selected.price === "Custom" ? "" : "/month"}</span></div><div className="flex justify-between gap-5"><span className="text-slate-500">Business</span><span className="text-right font-bold">{business.name || "Your retail business"}</span></div><div className="flex justify-between gap-5"><span className="text-slate-500">First location</span><span className="text-right font-bold">{business.branch}</span></div><div className="flex justify-between gap-5"><span className="text-slate-500">Workspace sign-in</span><span className="text-right font-bold">/{business.slug || "my-business"}/login</span></div><div className="flex justify-between gap-5"><span className="text-slate-500">Activation</span><span className="text-right font-bold text-amber-700">Super Admin review required</span></div></div><div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-[12px] leading-relaxed text-amber-900"><span className="font-bold">Verification requirement:</span> the workspace remains restricted until a DevEngine POS Super Admin validates the submitted business information and enables access.</div></>}</section></div><div className="mx-auto mt-6 flex max-w-[720px] justify-end"><button onClick={advance} className="rounded-xl bg-red-600 px-6 py-3.5 text-[14px] font-bold text-white shadow-lg shadow-red-900/20 transition hover:bg-red-700">{step === steps.length - 1 ? "Submit for verification →" : "Continue →"}</button></div></div></main>;
+  return <main className="min-h-[100dvh] bg-slate-950 px-5 py-8 text-white sm:p-10"><div className="mx-auto max-w-[1140px]"><button onClick={step === 0 ? onBack : () => setStep(step - 1)} className="flex items-center gap-2 text-[13px] font-semibold text-slate-300 transition hover:text-white">← {step === 0 ? "Back to DevEngine POS" : "Previous step"}</button><div className="mt-8 grid gap-10 lg:grid-cols-[0.78fr_1.22fr]"><aside className="pt-2"><DevEngineLogo tone="light" className="w-[220px]" /><RegistrationJourneyPreview /><div className="mt-8 text-[12px] font-bold uppercase tracking-[0.16em] text-slate-300">Your DevEngine POS launch</div><h1 className="mt-4 text-[clamp(2.8rem,5vw,4.6rem)] font-black leading-[0.92] tracking-[-0.06em]">Build the system your business grows into.</h1><p className="mt-5 max-w-md text-[16px] leading-relaxed text-slate-300">Create your independent business workspace, reserve its private URL, configure the first branch and submit the information needed to operate with confidence.</p><div className="mt-10 space-y-3">{steps.map((label, index) => <button key={label} onClick={() => index <= step && setStep(index)} className={`flex w-full items-center gap-3 text-left text-[13px] ${index === step ? "text-white" : index < step ? "text-red-300" : "text-slate-500"}`}><span className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ${index === step ? "bg-red-500 text-white" : index < step ? "bg-red-500/20 text-red-200" : "bg-white/10 text-slate-400"}`}>{index < step ? "✓" : index + 1}</span>{label}</button>)}</div><div className="mt-10 rounded-xl border border-white/10 bg-white/[0.05] p-4 text-[12px] leading-relaxed text-slate-300">Country-specific legal requirements differ. This registration records the information your DevEngine POS Super Admin needs to review; it does not replace legal, tax, licensing or payment-provider advice.</div></aside><section className="rounded-[28px] bg-white p-6 text-slate-950 shadow-2xl sm:p-8"><div className="text-[12px] font-bold uppercase tracking-[0.15em] text-slate-500">Step {step + 1} of {steps.length} · {steps[step]}</div>{step === 0 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Choose your plan</h2><p className="mt-2 text-[13px] text-slate-500">Choose the capacity that fits your operation today. You can request changes after verification.</p><div className="mt-6 space-y-3">{activePlanPool.map(item => <button key={item.id} onClick={() => setPlan(item.id)} className={`flex w-full items-center justify-between rounded-xl border p-4 text-left transition ${plan === item.id ? "border-red-700 bg-red-700 text-white" : "border-slate-200 hover:border-slate-400"}`}><span><span className="block text-[15px] font-bold">{item.name}</span><span className={`mt-1 block text-[12px] ${plan === item.id ? "text-white/75" : "text-slate-500"}`}>{item.locations}</span></span><span className="text-[15px] font-bold">{item.price}{item.price === "Custom" ? "" : "/mo"}</span></button>)}</div></>}{step === 1 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Account owner</h2><p className="mt-2 text-[13px] text-slate-500">This person will be the initial authorised workspace owner.</p><div className="mt-6 grid gap-4 sm:grid-cols-2"><Input label="Full legal name" value={business.owner} onChange={event => setField("owner", event.target.value)} placeholder="As shown on ID" /><Input label="Work email" value={business.email} onChange={event => setField("email", event.target.value)} type="email" placeholder="owner@business.com" /><Input label="Mobile number" value={business.phone} onChange={event => setField("phone", event.target.value)} placeholder="With country code" /><SelectField label="Country / region" value={business.country} onChange={value => setField("country", value)} options={[{ value: "Bangladesh", label: "Bangladesh" }, { value: "Other", label: "Other / configure later" }]} /></div><label className="mt-5 flex gap-3 text-[12px] leading-relaxed text-slate-600"><input type="checkbox" className="mt-0.5" defaultChecked />I confirm I am authorised to create this business account and accept platform communications about its setup.</label></>}{step === 2 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Business and first location</h2><p className="mt-2 text-[13px] text-slate-500">Your organisation gets a private data boundary and a unique sign-in address.</p><div className="mt-6 grid gap-4 sm:grid-cols-2"><Input label="Trading / display name" value={business.name} onChange={event => setField("name", event.target.value)} placeholder="Your retail business" /><Input label="Registered legal name" value={business.legalName} onChange={event => setField("legalName", event.target.value)} placeholder="If different" /><SelectField label="Entity type" value={business.entity} onChange={value => setField("entity", value)} options={[{ value: "sole-proprietorship", label: "Sole proprietorship" }, { value: "partnership", label: "Partnership" }, { value: "limited-company", label: "Limited company" }, { value: "other", label: "Other legal entity" }]} /><SelectField label="Operating currency" value={business.currency} onChange={value => setField("currency", value)} options={[{ value: "BDT", label: "Bangladeshi Taka (BDT)" }, { value: "USD", label: "US Dollar (USD)" }, { value: "Other", label: "Other / configure later" }]} /><Input label="First branch / store name" value={business.branch} onChange={event => setField("branch", event.target.value)} /><Input label="Business address" value={business.address} onChange={event => setField("address", event.target.value)} placeholder="Street, city, country" /><div className="sm:col-span-2"><Input label="Choose your workspace URL" value={business.slug} onChange={event => setField("slug", event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} iconRight={<span className="text-[11px] text-slate-400">/login</span>} /><p className="mt-2 text-[11px] text-slate-500">Employees will use <span className="font-semibold text-slate-700">/{business.slug || "your-business"}/login</span> to access this workspace.</p></div></div></>}{step === 3 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Compliance and verification</h2><p className="mt-2 text-[13px] leading-relaxed text-slate-500">Provide identifiers and documents applicable to your jurisdiction. Required fields and approval rules are configured by DevEngine POS Super Admin.</p><div className="mt-6 grid gap-4 sm:grid-cols-2"><Input label="Trade / operating licence number" value={business.tradeLicense} onChange={event => setField("tradeLicense", event.target.value)} placeholder="If applicable" /><Input label="Taxpayer / tax ID" value={business.taxId} onChange={event => setField("taxId", event.target.value)} placeholder="If applicable" /><Input label="VAT / sales-tax registration" value={business.vatBin} onChange={event => setField("vatBin", event.target.value)} placeholder="If applicable" /><Input label="Registration / incorporation number" value={business.incorporationNumber} onChange={event => setField("incorporationNumber", event.target.value)} placeholder="If applicable" /></div><div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5"><div className="text-[13px] font-semibold">Document checklist</div><p className="mt-1 text-[12px] leading-relaxed text-slate-500">In production, Super Admin can require ownership ID, proof of business address, registration certificates, licence records and tax/VAT documentation based on country, entity type and industry.</p><div className="mt-4 grid gap-2 sm:grid-cols-2">{([{ key: "ownerId", label: "Owner identity document" }, { key: "tradeLicense", label: "Business registration / licence" }, { key: "addressProof", label: "Proof of operating address" }, { key: "taxCert", label: "Tax or VAT certificate" }] as const).map(item => <label key={item.key} className="flex cursor-pointer items-center gap-2 rounded-lg bg-white px-3 py-2.5 text-[12px] font-medium text-slate-700"><input type="checkbox" checked={docChecklist[item.key]} onChange={e => setDocChecklist(prev => ({ ...prev, [item.key]: e.target.checked }))} />{item.label}</label>)}</div></div><label className="mt-5 flex cursor-pointer gap-3 text-[12px] leading-relaxed text-slate-600"><input type="checkbox" checked={authorizedConfirmed} onChange={e => setAuthorizedConfirmed(e.target.checked)} className="mt-0.5" />I confirm this information is accurate and I am authorised to submit it for account verification.</label></>}{step === 4 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Trial and billing</h2><p className="mt-2 text-[13px] text-slate-500">Start a 14-day trial or set up a payment method for post-approval billing. No charge is captured in this UI preview.</p><div className="mt-6 grid gap-3 sm:grid-cols-2">{[{ id: "trial", label: "Start free trial", detail: "No payment today" }, { id: "card", label: "Add card", detail: "Billing after trial" }, { id: "bank", label: "Bank transfer", detail: "Invoice / sales approval" }, { id: "mobile", label: "Mobile wallet", detail: "Availability by market" }].map(method => <button key={method.id} onClick={() => setPayment(method.id)} className={`rounded-xl border p-4 text-left transition ${payment === method.id ? "border-red-700 bg-red-50" : "border-slate-200 hover:border-slate-400"}`}><div className="text-[13px] font-bold">{method.label}</div><div className="mt-1 text-[11px] text-slate-500">{method.detail}</div></button>)}</div>{payment !== "trial" && <div className="mt-5 grid gap-4 rounded-xl bg-slate-50 p-5 sm:grid-cols-2"><Input label="Billing contact" value={business.billingContact} onChange={event => setField("billingContact", event.target.value)} placeholder="Name on payment method" /><Input label="Billing email" value={business.billingEmail} onChange={event => setField("billingEmail", event.target.value)} placeholder="billing@business.com" /><Input label="Payment reference" value={business.paymentReference} onChange={event => setField("paymentReference", event.target.value)} placeholder="Secure provider added in backend" /><Input label="Billing address" value={business.billingAddress} onChange={event => setField("billingAddress", event.target.value)} placeholder="Street, city, country" /></div>}<label className="mt-5 flex gap-3 text-[12px] leading-relaxed text-slate-600"><input type="checkbox" className="mt-0.5" defaultChecked />I accept the selected plan, billing terms and authorise DevEngine POS to contact me about subscription setup.</label></>}{step === 5 && <><h2 className="mt-2 text-[28px] font-bold tracking-tight">Review and submit</h2><p className="mt-2 text-[13px] text-slate-500">Your account is created as pending until DevEngine POS Super Admin completes the verification review.</p><div className="mt-6 space-y-3 rounded-xl bg-slate-50 p-5 text-[13px]"><div className="flex justify-between gap-5"><span className="text-slate-500">Plan</span><span className="text-right font-bold">{selected.name} · {selected.price}{selected.price === "Custom" ? "" : "/month"}</span></div><div className="flex justify-between gap-5"><span className="text-slate-500">Business</span><span className="text-right font-bold">{business.name || "Your retail business"}</span></div><div className="flex justify-between gap-5"><span className="text-slate-500">First location</span><span className="text-right font-bold">{business.branch}</span></div><div className="flex justify-between gap-5"><span className="text-slate-500">Workspace sign-in</span><span className="text-right font-bold">/{business.slug || "my-business"}/login</span></div><div className="flex justify-between gap-5"><span className="text-slate-500">Activation</span><span className="text-right font-bold text-amber-700">Super Admin review required</span></div></div><div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-[12px] leading-relaxed text-amber-900"><span className="font-bold">Verification requirement:</span> the workspace remains restricted until a DevEngine POS Super Admin validates the submitted business information and enables access.</div></>}</section></div><div className="mx-auto mt-6 flex max-w-[720px] justify-end"><button onClick={advance} className="rounded-xl bg-red-600 px-6 py-3.5 text-[14px] font-bold text-white shadow-lg shadow-red-900/20 transition hover:bg-red-700">{step === steps.length - 1 ? "Submit for verification →" : "Continue →"}</button></div></div></main>;
 }
 
 function VerificationQueue({ onBack }: { onBack: () => void }) {
@@ -6207,6 +6466,885 @@ function PlatformAdminModule({ active, onNavigate, onExit }: { active: string; o
   return <div className="flex h-[100dvh] bg-[#f7f8fb] text-slate-950"><aside className="flex w-[236px] shrink-0 flex-col bg-slate-950 p-4 text-white"><div className="border-b border-white/10 pb-5"><LandscapeLogo tone="light" size="panel" /><div className="mt-4 rounded-lg bg-white/10 px-3 py-2 text-[11px] font-semibold text-slate-300">PLATFORM CONTROL</div></div><nav className="mt-4 flex-1 space-y-1">{menu.map(item => <button key={item.id} onClick={() => onNavigate(item.id)} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition ${active === item.id ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}><Icon d={icons[item.icon]} size={15} />{item.label}</button>)}</nav><button onClick={onExit} className="rounded-lg border border-white/15 px-3 py-2.5 text-[12px] font-semibold text-slate-300 hover:bg-white/10">← Return to branding</button></aside><main className="flex-1 overflow-y-auto"><header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-7"><div><div className="text-[14px] font-bold">Super Admin</div><div className="text-[11px] text-slate-500">Platform-wide operations and subscriptions</div></div><Badge variant="success" dot>All systems operational</Badge></header><div className="mx-auto max-w-[1280px] space-y-6 p-7"><WorkspacePageHeader eyebrow="SaaS control center" title={menu.find(item => item.id === active)?.label || "Platform"} description="Platform-level controls are isolated from every tenant workspace." />{notice && <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] text-emerald-800"><span>{notice}</span><button onClick={() => setNotice("")} className="font-bold">×</button></div>}{content}</div></main></div>;
 }
 
+function SuperAdminControlCenter({
+  state,
+  onUpdateState,
+  onResetState,
+  onImpersonateTenant,
+  onOpenStorefront,
+  onExit,
+  onNavigate,
+  initialActive = "overview",
+}: {
+  state: PlatformState;
+  onUpdateState: (updater: (prev: PlatformState) => PlatformState, noticeText: string, category?: AuditCategory, target?: string) => void;
+  onResetState: () => void;
+  onImpersonateTenant: (slug: string, route?: string) => void;
+  onOpenStorefront: (slug: string) => void;
+  onExit: () => void;
+  onNavigate: (tab: string) => void;
+  initialActive?: string;
+}) {
+  const [active, setActive] = useState(initialActive === "dashboard" ? "overview" : initialActive);
+  const [notice, setNotice] = useState("");
+  const [newTenantOpen, setNewTenantOpen] = useState(false);
+  const [newTicketOpen, setNewTicketOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(state.tenants[0]?.id || "selim");
+  const [draftTenant, setDraftTenant] = useState({
+    name: "",
+    slug: "",
+    slugEdited: false,
+    owner: "",
+    email: "",
+    phone: "",
+    city: "Dhaka",
+    plan: "Growth" as string,
+    initialState: "Awaiting review" as "Awaiting review" | "Active",
+  });
+  const [draftTicket, setDraftTicket] = useState({
+    tenant: state.tenants[0]?.name || "Selim Electronics",
+    subject: "",
+    category: "Verification" as SupportTicket["category"],
+    priority: "High" as SupportTicket["priority"],
+    message: "",
+  });
+  const [readNotifications, setReadNotifications] = useState<string[]>(["content-ready"]);
+  const [dockExpanded, setDockExpanded] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [commandQuery, setCommandQuery] = useState("");
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [hoveredDockItem, setHoveredDockItem] = useState<{ label: string; badge: number; top: number } | null>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const dockAsideRef = useRef<HTMLElement>(null);
+
+  const tenants = state.tenants;
+  const tickets = state.tickets;
+  const profile = state.profile;
+
+  const nav: readonly [SuperAdminIconName, string][] = [
+    ["overview", "Overview"], ["organisations", "Organisations"], ["verification", "Verification queue"],
+    ["subscriptions", "Subscriptions"], ["plans", "Plans & limits"], ["features", "Feature flags"],
+    ["content", "Website content"], ["support", "Support queue"], ["audit", "Audit log"], ["profile", "My profile"], ["settings", "Platform settings"],
+  ];
+  useEffect(() => setActive(initialActive === "dashboard" ? "overview" : initialActive), [initialActive]);
+  useEffect(() => {
+    document.body.classList.add("super-admin-canvas");
+    return () => document.body.classList.remove("super-admin-canvas");
+  }, []);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setCommandOpen(true);
+        setNotificationsOpen(false);
+        setProfileOpen(false);
+        window.setTimeout(() => searchInputRef.current?.focus(), 0);
+      }
+      if (event.key === "Escape") {
+        setCommandOpen(false);
+        setNotificationsOpen(false);
+        setProfileOpen(false);
+        searchInputRef.current?.blur();
+      }
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      const inDesktopSearch = searchRef.current?.contains(target);
+      const inMobileSearch = mobileSearchRef.current?.contains(target);
+      if (!inDesktopSearch && !inMobileSearch) setCommandOpen(false);
+      if (!notificationsRef.current?.contains(target)) setNotificationsOpen(false);
+      if (!profileRef.current?.contains(target)) setProfileOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, []);
+
+  const showToast = (message: string) => {
+    setNotice(message);
+    window.setTimeout(() => setNotice(prev => prev === message ? "" : prev), 3600);
+  };
+  const go = (id: string) => { setActive(id); onNavigate(id); };
+  const handleUpdateState = (updater: (prev: PlatformState) => PlatformState, noticeText: string, category: AuditCategory = "Security", target = "Platform") => {
+    onUpdateState(updater, noticeText, category, target);
+    showToast(noticeText);
+  };
+  const patchTenant = (id: string, patch: Partial<PlatformTenant>, auditAction: string, category: AuditCategory = "Tenant") => {
+    const targetTenant = tenants.find(item => item.id === id);
+    handleUpdateState(
+      prev => ({
+        ...prev,
+        tenants: prev.tenants.map(item => (item.id === id ? { ...item, ...patch } : item)),
+      }),
+      auditAction,
+      category,
+      targetTenant?.name || id
+    );
+  };
+
+  const pendingVerificationsCount = tenants.filter(item => item.verification !== "Verified").length;
+  const openSupportCount = tickets.filter(item => item.status !== "Resolved").length;
+  const overdueInvoicesCount = state.invoices.filter(item => item.status === "Overdue" || item.status === "Retrying").length;
+  const notifications = [
+    ...(pendingVerificationsCount > 0
+      ? [{ id: "kyc-pending", title: `${pendingVerificationsCount} organisation(s) need KYC review`, detail: `${tenants.filter(t => t.verification !== "Verified").map(t => t.name).slice(0, 2).join(", ")} awaiting approval before activation.`, link: "verification", read: readNotifications.includes("kyc-pending") }]
+      : []),
+    ...(overdueInvoicesCount > 0
+      ? [{ id: "billing-retry", title: `${overdueInvoicesCount} SSLCommerz invoice(s) need follow-up`, detail: `Gateway store ${state.gateway.storeId} (${state.gateway.environment}) has pending collection retries.`, link: "subscriptions", read: readNotifications.includes("billing-retry") }]
+      : []),
+    ...(openSupportCount > 0
+      ? [{ id: "support-open", title: `${openSupportCount} open support ticket(s)`, detail: `${tickets.filter(t => t.status !== "Resolved")[0]?.tenant || "Tenant"} requires platform desk response.`, link: "support", read: readNotifications.includes("support-open") }]
+      : []),
+    { id: "content-ready", title: "Marketing & Guest App controls live", detail: "Changes in Website content update DevEngine POS landing & customer apps instantly.", link: "content", read: readNotifications.includes("content-ready") },
+  ];
+
+  const profileInitials = profile.name.trim().split(/\s+/).map(part => part[0]).join("").slice(0, 2).toUpperCase() || "HL";
+
+  const createOrganisation = () => {
+    const businessName = draftTenant.name.trim();
+    if (!businessName) return;
+    const cleanSlug = (draftTenant.slug || businessName).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || `tenant-${Date.now().toString().slice(-4)}`;
+    const matchedPlan = state.plans.find(p => p.name === draftTenant.plan) || state.plans[1];
+    const isActive = draftTenant.initialState === "Active";
+    const newId = `${cleanSlug}-${Date.now().toString().slice(-4)}`;
+    const maxBranches = matchedPlan.name === "Scale" ? 25 : matchedPlan.name === "Growth" ? 3 : 1;
+    const maxRegisters = matchedPlan.name === "Scale" ? 50 : matchedPlan.name === "Growth" ? 8 : 2;
+    const maxStaff = matchedPlan.name === "Scale" ? 120 : matchedPlan.name === "Growth" ? 10 : 3;
+    const created: PlatformTenant = {
+      id: newId,
+      name: businessName,
+      slug: cleanSlug,
+      owner: draftTenant.owner.trim() || "Business Owner",
+      email: draftTenant.email.trim() || `owner@${cleanSlug}.com`,
+      phone: draftTenant.phone.trim() || "+880 1700 000000",
+      city: draftTenant.city.trim() || "Dhaka",
+      country: "Bangladesh",
+      entityType: "sole-proprietorship",
+      tradeLicense: isActive ? `TRAD/DNCC/${Date.now().toString().slice(-6)}` : "Pending submission",
+      vatBin: isActive ? "Verified BIN" : "Pending submission",
+      plan: matchedPlan.name,
+      status: isActive ? "Active" : "Pending",
+      verification: isActive ? "Verified" : "Awaiting review",
+      verificationNote: isActive ? "Provisioned directly by Super Admin." : "Created from Super Admin · awaiting KYC review.",
+      docs: { ownerId: isActive, tradeLicense: isActive, addressProof: isActive, taxCert: isActive },
+      branches: 1,
+      maxBranches,
+      registers: 1,
+      maxRegisters,
+      staff: 1,
+      maxStaff,
+      skusCount: 0,
+      monthlySalesBdt: 0,
+      onlineOrdersCount: 0,
+      mrr: matchedPlan.price === "Custom" ? "৳ 24,000" : matchedPlan.price,
+      mrrNumeric: matchedPlan.priceNumeric || 0,
+      access: isActive,
+      maintenance: false,
+      joinedAt: "Just now",
+      modules: {
+        posCheckout: true,
+        multiBranch: matchedPlan.name !== "Starter",
+        storefront: matchedPlan.name !== "Starter",
+        delivery: matchedPlan.name !== "Starter",
+        supplierPayables: true,
+        customerCredit: true,
+        advancedReports: matchedPlan.name === "Scale",
+        guestAppAddon: false,
+        sslcommerzOnline: true,
+      },
+      policy: {
+        allowNegativeStock: false,
+        requireAdjustmentApproval: true,
+        allowCustomerDue: true,
+        enforceTwoStepStaff: matchedPlan.name !== "Starter",
+        invoicePrefix: `${cleanSlug.slice(0, 3).toUpperCase()}-2026`,
+        lowStockThreshold: 5,
+      },
+    };
+    handleUpdateState(
+      prev => ({
+        ...prev,
+        tenants: [created, ...prev.tenants],
+        invoices: [
+          {
+            id: `INV-${2410 + prev.invoices.length}`,
+            tenantId: newId,
+            tenantName: businessName,
+            plan: matchedPlan.name,
+            amount: matchedPlan.price === "Custom" ? "৳ 24,000" : matchedPlan.price,
+            amountNumeric: matchedPlan.priceNumeric || 24000,
+            dueDate: "Today",
+            method: "SSLCommerz",
+            status: isActive ? "Paid" : "Overdue",
+            trxId: isActive ? `SSLC-SA-${Date.now().toString().slice(-6)}` : "PENDING",
+          },
+          ...prev.invoices,
+        ],
+      }),
+      `Created organisation ${businessName} (/${cleanSlug})`,
+      "Tenant",
+      businessName
+    );
+    setSelectedId(newId);
+    setNewTenantOpen(false);
+    setDraftTenant({ name: "", slug: "", slugEdited: false, owner: "", email: "", phone: "", city: "Dhaka", plan: "Growth", initialState: "Awaiting review" });
+    go("organisations");
+  };
+
+  const createSupportTicket = () => {
+    if (!draftTicket.subject.trim()) return;
+    const ticketId = `SUP-${1843 + tickets.length}`;
+    const newItem: SupportTicket = {
+      id: ticketId,
+      tenant: draftTicket.tenant || tenants[0]?.name || "Selim Electronics",
+      subject: draftTicket.subject.trim(),
+      category: draftTicket.category,
+      priority: draftTicket.priority,
+      status: "Open",
+      owner: profile.name,
+      createdAt: "Just now",
+      messages: [
+        {
+          author: profile.name,
+          role: "Super Admin",
+          text: draftTicket.message.trim() || `Platform service ticket logged for ${draftTicket.tenant}.`,
+          time: "Just now",
+        },
+      ],
+    };
+    handleUpdateState(
+      prev => ({ ...prev, tickets: [newItem, ...prev.tickets] }),
+      `Created ticket ${ticketId} for ${newItem.tenant}`,
+      "Support",
+      newItem.tenant
+    );
+    setNewTicketOpen(false);
+    setDraftTicket({ tenant: tenants[0]?.name || "Selim Electronics", subject: "", category: "Verification", priority: "High", message: "" });
+    go("support");
+  };
+
+  const viewProps: SuperAdminViewProps = {
+    state,
+    selectedTenantId: selectedId,
+    onSelectTenantId: setSelectedId,
+    onNavigateTab: go,
+    onOpenNewTenant: () => setNewTenantOpen(true),
+    onOpenNewTicket: () => setNewTicketOpen(true),
+    onImpersonateTenant,
+    onOpenStorefront,
+    onPatchTenant: patchTenant,
+    onUpdateState: handleUpdateState,
+    onResetState: () => {
+      onResetState();
+      showToast("Restored default platform state");
+    },
+  };
+
+  const views: Record<string, React.ReactNode> = {
+    overview: <OverviewView {...viewProps} />,
+    organisations: <OrganisationsView {...viewProps} />,
+    verification: <VerificationView {...viewProps} />,
+    subscriptions: <SubscriptionsView {...viewProps} />,
+    plans: <PlansView {...viewProps} />,
+    features: <FeaturesView {...viewProps} />,
+    content: <ContentView {...viewProps} />,
+    support: <SupportView {...viewProps} />,
+    audit: <AuditView {...viewProps} />,
+    profile: <ProfileView {...viewProps} />,
+    settings: <SettingsView {...viewProps} />,
+  };
+  const renderExecutiveAdminFrame = () => {
+    const pageTitle = nav.find(item => item[0] === active)?.[1] || "Overview";
+    const unread = notifications.filter(item => !item.read).length;
+    const commandNavigation = nav.filter(([, label]) => label.toLowerCase().includes(commandQuery.toLowerCase()));
+    const commandTenants = tenants.filter(item => `${item.name} ${item.owner} ${item.slug}`.toLowerCase().includes(commandQuery.toLowerCase())).slice(0, 4);
+    const openSearch = () => {
+      setCommandOpen(true);
+      setNotificationsOpen(false);
+      setProfileOpen(false);
+    };
+    const selectNotification = (id: string, link: string) => {
+      setReadNotifications(prev => prev.includes(id) ? prev : [...prev, id]);
+      setNotificationsOpen(false);
+      go(link);
+    };
+    const navigateTo = (id: SuperAdminIconName) => {
+      go(id);
+      setMobileNavOpen(false);
+    };
+    const navGroups: { title: string; items: readonly [SuperAdminIconName, string][] }[] = [
+      { title: "Workspace", items: nav.slice(0, 3) },
+      { title: "Commercial", items: nav.slice(3, 6) },
+      { title: "Operations", items: nav.slice(6) },
+    ];
+    const quickViews: readonly [SuperAdminIconName, string][] = [
+      ["overview", "Command center"],
+      ["organisations", "Tenant lifecycle"],
+      ["verification", "Onboarding"],
+      ["subscriptions", "Billing"],
+      ["support", "Support"],
+    ];
+
+    const renderCommandResults = () => (
+      <div className="max-h-[340px] overflow-y-auto p-1.5">
+        <div className="flex items-center justify-between px-2.5 pb-1 pt-1.5">
+          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Platform pages</p>
+          {commandQuery && (
+            <button
+              type="button"
+              onClick={() => { setCommandQuery(""); searchInputRef.current?.focus(); }}
+              className="text-[10px] font-bold text-slate-500 hover:text-slate-900"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        {commandNavigation.length ? (
+          commandNavigation.map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => { go(id); setCommandOpen(false); setCommandQuery(""); }}
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition ${active === id ? "bg-slate-100 text-slate-950" : "text-slate-700 hover:bg-slate-50"}`}
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                <SuperAdminIcon name={id} size={15} />
+              </span>
+              <span className="text-[12px] font-bold text-slate-900">{label}</span>
+              <span className="ml-auto text-[11px] font-medium text-slate-400">Open →</span>
+            </button>
+          ))
+        ) : (
+          <p className="px-3 py-3 text-[12px] text-slate-500">No platform pages match "{commandQuery}".</p>
+        )}
+        {commandTenants.length > 0 && (
+          <>
+            <p className="px-2.5 pb-1 pt-3 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Organisations</p>
+            {commandTenants.map(tenant => (
+              <button
+                key={tenant.id}
+                type="button"
+                onClick={() => { setSelectedId(tenant.id); go("organisations"); setCommandOpen(false); setCommandQuery(""); }}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left hover:bg-slate-50"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-950 text-[10px] font-black text-white">
+                  {tenant.name.slice(0, 1)}
+                </span>
+                <span>
+                  <b className="block text-[12px] text-slate-900">{tenant.name}</b>
+                  <small className="text-[10px] text-slate-500">/{tenant.slug} · {tenant.plan}</small>
+                </span>
+                <span className="ml-auto text-[11px] text-slate-400">Inspect →</span>
+              </button>
+            ))}
+          </>
+        )}
+      </div>
+    );
+
+    const renderDockContents = (compact: boolean) => (
+      <>
+        <div className={`flex items-center ${compact ? "justify-center pb-2" : "justify-between gap-2 px-1 pb-2.5"} border-b border-white/10`}>
+          <button
+            type="button"
+            onClick={() => navigateTo("overview")}
+            title={compact ? "DevEngine POS · Overview" : "Return to Overview"}
+            className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] transition hover:border-white/30 hover:bg-white/10"
+          >
+            <img src={devEngineFaviconImg} alt="DevEngine POS" className="h-5 w-5 object-contain" />
+            <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-[#070E22]" title="Systems operational · 99.98%" />
+          </button>
+          {!compact && (
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[11px] font-extrabold tracking-tight text-white">Control Dock</div>
+              <div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/75">99.98% Live</div>
+            </div>
+          )}
+        </div>
+
+        <nav aria-label="Super Admin navigation" className="my-2 min-h-0 flex-1 overflow-y-auto px-0.5">
+          {navGroups.map((group, groupIndex) => (
+            <div key={group.title} className={groupIndex > 0 ? "mt-2 pt-2 border-t border-white/10" : ""}>
+              {!compact && (
+                <p className="mb-1.5 px-2 text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">{group.title}</p>
+              )}
+              <div className="space-y-1">
+                {group.items.map(([id, label]) => {
+                  const isActive = active === id;
+                  const countBadge =
+                    id === "verification" ? pendingVerificationsCount : id === "support" ? openSupportCount : 0;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => navigateTo(id)}
+                      onMouseEnter={event => {
+                        if (!compact || !dockAsideRef.current) return;
+                        const buttonRect = event.currentTarget.getBoundingClientRect();
+                        const asideRect = dockAsideRef.current.getBoundingClientRect();
+                        setHoveredDockItem({
+                          label,
+                          badge: countBadge,
+                          top: buttonRect.top - asideRect.top + buttonRect.height / 2,
+                        });
+                      }}
+                      onMouseLeave={() => compact && setHoveredDockItem(null)}
+                      aria-label={label}
+                      className={[
+                        "group relative flex w-full items-center transition-all duration-150",
+                        compact
+                          ? "mx-auto h-9 w-9 justify-center rounded-xl"
+                          : "gap-2.5 rounded-xl px-2.5 py-2 text-left text-[12px] font-semibold",
+                        isActive
+                          ? "bg-white text-slate-950 shadow-[0_6px_18px_-4px_rgba(255,255,255,0.28)]"
+                          : "text-slate-300 hover:bg-white/[0.09] hover:text-white",
+                      ].join(" ")}
+                    >
+                      <SuperAdminIcon name={id} size={16} strokeWidth={isActive ? 2.1 : 1.85} />
+                      {!compact && <span className="truncate">{label}</span>}
+                      {compact && countBadge > 0 && (
+                        <span
+                          className={[
+                            "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-black ring-2 ring-[#070E22]",
+                            isActive ? "bg-slate-950 text-white" : "bg-white text-slate-950",
+                          ].join(" ")}
+                        >
+                          {countBadge}
+                        </span>
+                      )}
+                      {!compact && countBadge > 0 && (
+                        <span
+                          className={[
+                            "ml-auto flex h-4 min-w-4 items-center justify-center rounded-full px-1.5 text-[9px] font-black",
+                            isActive ? "bg-slate-950 text-white" : "bg-white/15 text-white",
+                          ].join(" ")}
+                        >
+                          {countBadge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        <div className={`flex ${compact ? "flex-col items-center gap-1.5 pt-2" : "items-center justify-between gap-2 pt-2.5"} border-t border-white/10`}>
+          <button
+            type="button"
+            onClick={() => navigateTo("profile")}
+            title={`${profile.name} (${profile.role})`}
+            className={`flex items-center gap-2 rounded-xl transition ${compact ? "h-9 w-9 justify-center hover:bg-white/10" : "min-w-0 flex-1 px-1.5 py-1 hover:bg-white/10"}`}
+          >
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-[10px] font-black text-slate-950">
+              {profileInitials}
+            </span>
+            {!compact && (
+              <span className="min-w-0 text-left">
+                <b className="block truncate text-[11px] font-bold text-white">{profile.name}</b>
+                <small className="block truncate text-[9px] text-slate-400">{profile.role}</small>
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setDockExpanded(value => !value); setHoveredDockItem(null); }}
+            title={dockExpanded ? "Compact floating dock" : "Expand floating dock"}
+            aria-label={dockExpanded ? "Compact floating dock" : "Expand floating dock"}
+            className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-slate-300 transition hover:border-white/30 hover:bg-white/15 hover:text-white lg:flex"
+          >
+            <SuperAdminIcon name={dockExpanded ? "chevronLeft" : "chevronRight"} size={14} />
+          </button>
+        </div>
+      </>
+    );
+
+    return <div className="super-admin-executive min-h-[100dvh] bg-[#f4f6f9] text-slate-950">
+      {/* Compact Floating Obsidian Pill Dock (Desktop) — Centered, not top-to-bottom */}
+      <aside
+        ref={dockAsideRef}
+        onMouseLeave={() => setHoveredDockItem(null)}
+        className={[
+          "fixed left-4 top-1/2 z-30 hidden max-h-[calc(100dvh-136px)] -translate-y-1/2 flex-col rounded-[26px] border border-slate-800/80 bg-[#070E22]/95 text-white shadow-[0_24px_56px_-14px_rgba(2,6,23,0.5)] backdrop-blur-xl transition-all duration-200 lg:flex",
+          dockExpanded ? "w-[228px] p-3" : "w-[62px] px-2 py-3",
+        ].join(" ")}
+      >
+        {renderDockContents(!dockExpanded)}
+        {!dockExpanded && hoveredDockItem && (
+          <div
+            style={{ top: hoveredDockItem.top }}
+            className="pointer-events-none absolute left-[calc(100%+12px)] z-50 flex -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-xl border border-slate-800 bg-[#070E22] px-3 py-1.5 text-[12px] font-bold text-white shadow-xl"
+          >
+            <span>{hoveredDockItem.label}</span>
+            {hoveredDockItem.badge > 0 && (
+              <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-black text-slate-950">
+                {hoveredDockItem.badge}
+              </span>
+            )}
+          </div>
+        )}
+      </aside>
+
+      {/* Mobile Slide-Over Navigation Drawer */}
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <button
+            type="button"
+            aria-label="Close navigation"
+            onClick={() => setMobileNavOpen(false)}
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
+          />
+          <aside className="relative z-10 m-3 flex max-h-[calc(100dvh-24px)] w-[256px] max-w-[82vw] flex-col self-center rounded-[26px] border border-white/15 bg-[#070E22] p-3.5 text-white shadow-2xl">
+            <div className="mb-2 flex justify-end">
+              <button
+                type="button"
+                aria-label="Close drawer"
+                onClick={() => setMobileNavOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-300 hover:text-white"
+              >
+                <SuperAdminIcon name="x" size={16} />
+              </button>
+            </div>
+            {renderDockContents(false)}
+          </aside>
+        </div>
+      )}
+
+      <div className={`min-h-[100dvh] transition-all duration-200 ${dockExpanded ? "lg:pl-[256px]" : "lg:pl-[88px]"}`}>
+        <div className="mx-auto max-w-[1380px] px-4 pt-3 sm:px-6 lg:px-8">
+          <header className="sticky top-3 z-40 overflow-visible rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.12)] backdrop-blur-md">
+            <div className="flex h-[58px] items-center justify-between gap-3 px-3.5 sm:px-4">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <button
+                  type="button"
+                  aria-label="Open menu"
+                  onClick={() => setMobileNavOpen(true)}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-800 transition hover:bg-slate-100 lg:hidden"
+                >
+                  <SuperAdminIcon name="menu" size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={onExit}
+                  title="Return to DevEngine POS site"
+                  className="hidden shrink-0 items-center gap-2 rounded-lg px-1.5 py-1 transition hover:bg-slate-100 sm:flex"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-950 text-[11px] font-black text-white">
+                    DE
+                  </span>
+                  <span className="text-[13px] font-bold tracking-tight text-slate-950">DevEngine</span>
+                </button>
+                <span className="hidden h-5 w-px bg-slate-200 sm:block" />
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="hidden rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 md:inline-block">
+                    Super Admin
+                  </span>
+                  <h1 className="truncate text-[14px] font-bold tracking-tight text-slate-950">{pageTitle}</h1>
+                </div>
+              </div>
+
+              {/* Centered Compact Search */}
+              <div ref={searchRef} className="relative mx-2 hidden w-full max-w-[360px] flex-1 lg:block">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <SuperAdminIcon name="search" size={14} />
+                </span>
+                <input
+                  ref={searchInputRef}
+                  value={commandQuery}
+                  onFocus={openSearch}
+                  onClick={openSearch}
+                  onChange={event => { setCommandQuery(event.target.value); openSearch(); }}
+                  placeholder="Search tenants, queues or pages…"
+                  className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/90 py-1.5 pl-8 pr-12 text-[12px] font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                />
+                {commandOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => { setCommandOpen(false); setCommandQuery(""); searchInputRef.current?.blur(); }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+                  >
+                    Esc
+                  </button>
+                ) : (
+                  <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
+                    ⌘K
+                  </kbd>
+                )}
+
+                {commandOpen && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_48px_-12px_rgba(15,23,42,0.18)]">
+                    {renderCommandResults()}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                <button
+                  type="button"
+                  aria-label="Open command search"
+                  onClick={openSearch}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 lg:hidden"
+                >
+                  <SuperAdminIcon name="search" size={15} />
+                </button>
+
+                <span className="hidden items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700 xl:inline-flex">
+                  <i className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Live
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setNewTenantOpen(true)}
+                  className="hidden items-center gap-1 rounded-lg bg-slate-950 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-slate-800 md:inline-flex"
+                >
+                  <SuperAdminIcon name="plus" size={14} strokeWidth={2.2} />
+                  New tenant
+                </button>
+
+                <div ref={notificationsRef} className="relative">
+                  <button
+                    type="button"
+                    aria-label="Open notifications"
+                    onClick={() => { setNotificationsOpen(value => !value); setProfileOpen(false); setCommandOpen(false); }}
+                    className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <SuperAdminIcon name="bell" size={15} />
+                    {unread > 0 && (
+                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-950 px-1 text-[9px] font-bold text-white ring-2 ring-white">
+                        {unread}
+                      </span>
+                    )}
+                  </button>
+                  {notificationsOpen && (
+                    <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(370px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                        <div>
+                          <b className="block text-[13px] text-slate-950">Notifications</b>
+                          <small className="text-[11px] text-slate-500">{unread ? `${unread} need your attention` : "You are all caught up"}</small>
+                        </div>
+                        <button type="button" onClick={() => setReadNotifications(notifications.map(item => item.id))} className="text-[11px] font-semibold text-slate-600 hover:text-slate-950">Mark all read</button>
+                      </div>
+                      <div className="max-h-[340px] overflow-y-auto p-2">
+                        {notifications.map(item => (
+                          <button key={item.id} type="button" onClick={() => selectNotification(item.id, item.link)} className={`w-full rounded-xl p-3 text-left transition hover:bg-slate-50 ${item.read ? "opacity-65" : "bg-slate-50/80"}`}>
+                            <span className="flex gap-3">
+                              <i className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${item.read ? "bg-slate-300" : "bg-slate-950"}`} />
+                              <span>
+                                <b className="block text-[12px] text-slate-900">{item.title}</b>
+                                <small className="mt-1 block text-[11px] leading-relaxed text-slate-500">{item.detail}</small>
+                              </span>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                      <button type="button" onClick={() => { setNotificationsOpen(false); go("audit"); }} className="w-full border-t border-slate-100 px-4 py-2.5 text-left text-[12px] font-semibold text-slate-700 hover:bg-slate-50">View notification history →</button>
+                    </div>
+                  )}
+                </div>
+
+                <div ref={profileRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => { setProfileOpen(value => !value); setNotificationsOpen(false); setCommandOpen(false); }}
+                    className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white py-1 pl-1 pr-2 text-left transition hover:bg-slate-50"
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-950 text-[10px] font-bold text-white">
+                      {profileInitials}
+                    </span>
+                    <span className="hidden max-w-[110px] truncate text-[12px] font-semibold text-slate-900 sm:block">
+                      {profile.name}
+                    </span>
+                    <SuperAdminIcon name="chevronDown" size={12} className="text-slate-400" />
+                  </button>
+                  {profileOpen && (
+                    <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[250px] overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl">
+                      <div className="border-b border-slate-100 px-3 py-2.5">
+                        <b className="block text-[12px] text-slate-950">{profile.name}</b>
+                        <small className="mt-0.5 block text-[11px] text-slate-500">{profile.role} · {profile.email}</small>
+                      </div>
+                      <button type="button" onClick={() => { setProfileOpen(false); go("profile"); }} className="mt-1 flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-semibold text-slate-800 hover:bg-slate-50"><SuperAdminIcon name="profile" size={14} className="text-slate-500" />Manage profile &amp; security</button>
+                      <button type="button" onClick={() => { setProfileOpen(false); go("settings"); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-semibold text-slate-800 hover:bg-slate-50"><SuperAdminIcon name="settings" size={14} className="text-slate-500" />Platform settings</button>
+                      <button type="button" onClick={() => { setProfileOpen(false); go("audit"); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-semibold text-slate-800 hover:bg-slate-50"><SuperAdminIcon name="audit" size={14} className="text-slate-500" />View my activity</button>
+                      <button type="button" onClick={() => { setProfileOpen(false); onExit(); }} className="mt-1 flex w-full items-center gap-2.5 rounded-xl border-t border-slate-100 px-3 py-2 text-left text-[12px] font-semibold text-slate-600 hover:bg-slate-50"><SuperAdminIcon name="logout" size={14} className="text-slate-400" />Exit Super Admin</button>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onExit}
+                  title="Exit to website"
+                  className="hidden h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-950 sm:inline-flex"
+                >
+                  <SuperAdminIcon name="logout" size={12} />
+                  Exit
+                </button>
+              </div>
+            </div>
+
+            {commandOpen && (
+              <div ref={mobileSearchRef} className="border-t border-slate-200 bg-white p-3 lg:hidden">
+                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <SuperAdminIcon name="search" size={15} className="text-slate-400" />
+                  <input
+                    value={commandQuery}
+                    onChange={event => setCommandQuery(event.target.value)}
+                    placeholder="Type a module or business name…"
+                    className="w-full bg-transparent text-[12px] text-slate-900 outline-none placeholder:text-slate-400"
+                  />
+                  <button type="button" onClick={() => { setCommandOpen(false); setCommandQuery(""); }} className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">Esc</button>
+                </div>
+                <div className="mt-2 rounded-xl border border-slate-100 bg-white">
+                  {renderCommandResults()}
+                </div>
+              </div>
+            )}
+          </header>
+
+          {/* Compact Quick Switch Strip aligned directly with content */}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+              {quickViews.map(([id, label]) => {
+                const isCurrent = active === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => go(id)}
+                    className={[
+                      "inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1 text-[12px] font-medium transition",
+                      isCurrent
+                        ? "bg-slate-950 text-white shadow-xs"
+                        : "border border-slate-200/80 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-950",
+                    ].join(" ")}
+                  >
+                    <SuperAdminIcon name={id} size={13} className={isCurrent ? "text-white" : "text-slate-500"} />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <span className="hidden text-[11px] font-medium text-slate-500 sm:inline">
+              {tenants.length} organisations · {pendingVerificationsCount} KYC pending · SSLCommerz {state.gateway.environment}
+            </span>
+          </div>
+        </div>
+
+        <main className="mx-auto max-w-[1380px] px-4 pb-10 pt-5 sm:px-6 lg:px-8">{notice && <div className="mb-5 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] font-medium text-emerald-800"><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}{views[active] || views.overview}</main>
+      </div>
+      <Modal open={newTenantOpen} onClose={() => setNewTenantOpen(false)} title="Create organisation" size="md">
+        <div className="space-y-4">
+          <p className="text-[13px] leading-relaxed text-slate-500">Provision a tenant workspace with isolated database scope, plan entitlements, and POS module configuration.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Business name"
+              value={draftTenant.name}
+              onChange={event => {
+                const nextName = event.target.value;
+                setDraftTenant(prev => ({
+                  ...prev,
+                  name: nextName,
+                  slug: prev.slugEdited ? prev.slug : nextName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+                }));
+              }}
+              placeholder="e.g. Dhaka Gadget Hub"
+            />
+            <Input
+              label="Workspace slug"
+              value={draftTenant.slug}
+              onChange={event => setDraftTenant(prev => ({ ...prev, slugEdited: true, slug: event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") }))}
+              placeholder="dhaka-gadget-hub"
+            />
+            <Input label="Owner full name" value={draftTenant.owner} onChange={event => setDraftTenant(prev => ({ ...prev, owner: event.target.value }))} placeholder="Md. Tariqul Islam" />
+            <Input label="Owner email" type="email" value={draftTenant.email} onChange={event => setDraftTenant(prev => ({ ...prev, email: event.target.value }))} placeholder="owner@business.com" />
+            <Input label="Phone" value={draftTenant.phone} onChange={event => setDraftTenant(prev => ({ ...prev, phone: event.target.value }))} placeholder="+880 1711-000000" />
+            <Input label="City" value={draftTenant.city} onChange={event => setDraftTenant(prev => ({ ...prev, city: event.target.value }))} placeholder="Dhaka" />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SelectField
+              label="Plan"
+              value={draftTenant.plan}
+              onChange={val => setDraftTenant(prev => ({ ...prev, plan: val }))}
+              options={state.plans.map(p => ({ value: p.name, label: `${p.name} (${p.price})` }))}
+            />
+            <SelectField
+              label="Initial state"
+              value={draftTenant.initialState}
+              onChange={val => setDraftTenant(prev => ({ ...prev, initialState: val as "Awaiting review" | "Active" }))}
+              options={[{ value: "Awaiting review", label: "Pending verification" }, { value: "Active", label: "Active immediately" }]}
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-3">
+            <Btn variant="secondary" onClick={() => setNewTenantOpen(false)}>Cancel</Btn>
+            <Btn onClick={createOrganisation} disabled={!draftTenant.name.trim()}>Create organisation</Btn>
+          </div>
+        </div>
+      </Modal>
+      <Modal open={newTicketOpen} onClose={() => setNewTicketOpen(false)} title="Create support ticket" size="md">
+        <div className="space-y-4">
+          <p className="text-[13px] leading-relaxed text-slate-500">Log a support request against an organisation workspace for billing, POS hardware, KYC, or feature support.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SelectField
+              label="Organisation"
+              value={draftTicket.tenant}
+              onChange={val => setDraftTicket(prev => ({ ...prev, tenant: val }))}
+              options={tenants.map(t => ({ value: t.name, label: t.name }))}
+            />
+            <SelectField
+              label="Category"
+              value={draftTicket.category}
+              onChange={val => setDraftTicket(prev => ({ ...prev, category: val as SupportTicket["category"] }))}
+              options={[
+                { value: "Verification", label: "Verification & KYC" },
+                { value: "POS & Hardware", label: "POS & Hardware" },
+                { value: "Billing & SSLCommerz", label: "Billing & SSLCommerz" },
+                { value: "Branches & Stock", label: "Branches & Stock" },
+                { value: "Storefront", label: "Storefront" },
+              ]}
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-[1.4fr_0.6fr]">
+            <Input label="Subject" value={draftTicket.subject} onChange={event => setDraftTicket(prev => ({ ...prev, subject: event.target.value }))} placeholder="e.g. Thermal printer setup on Counter 02" />
+            <SelectField
+              label="Priority"
+              value={draftTicket.priority}
+              onChange={val => setDraftTicket(prev => ({ ...prev, priority: val as SupportTicket["priority"] }))}
+              options={[{ value: "Urgent", label: "Urgent" }, { value: "High", label: "High" }, { value: "Normal", label: "Normal" }, { value: "Low", label: "Low" }]}
+            />
+          </div>
+          <label className="block">
+            <span className="mb-1.5 block text-[13px] font-medium text-slate-700">Initial note</span>
+            <textarea
+              rows={3}
+              value={draftTicket.message}
+              onChange={event => setDraftTicket(prev => ({ ...prev, message: event.target.value }))}
+              placeholder="Describe the issue and next steps..."
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-[13px] outline-none focus:border-slate-950"
+            />
+          </label>
+          <div className="flex justify-end gap-3 pt-3">
+            <Btn variant="secondary" onClick={() => setNewTicketOpen(false)}>Cancel</Btn>
+            <Btn onClick={createSupportTicket} disabled={!draftTicket.subject.trim()}>Submit ticket</Btn>
+          </div>
+        </div>
+      </Modal>
+    </div>;
+  };
+  return renderExecutiveAdminFrame();
+}
+
 function PlatformConsole({ onExit, onNavigate, initialActive = "overview" }: { onExit: () => void; onNavigate: (tab: string) => void; initialActive?: string }) {
   const [active, setActive] = useState(initialActive);
   useEffect(() => setActive(initialActive), [initialActive]);
@@ -6222,15 +7360,93 @@ function PlatformConsole({ onExit, onNavigate, initialActive = "overview" }: { o
 // ══════════════════════════════════════════════════════════════════════════════
 // APP SHELL
 // ══════════════════════════════════════════════════════════════════════════════
-function AppShell({ onSignOut, guestApp, onGuestAppChange, activeRoute, onNavigate, tenant }: { onSignOut: () => void; guestApp: GuestAppConfig; onGuestAppChange: (next: GuestAppConfig) => void; activeRoute: string; onNavigate: (id: string) => void; tenant: string }) {
+function AppShell({
+  onSignOut,
+  guestApp,
+  onGuestAppChange,
+  activeRoute,
+  onNavigate,
+  tenant,
+  tenantRecord,
+  platformContent,
+  impersonating = false,
+  onExitImpersonation,
+}: {
+  onSignOut: () => void;
+  guestApp: GuestAppConfig;
+  onGuestAppChange: (next: GuestAppConfig) => void;
+  activeRoute: string;
+  onNavigate: (id: string) => void;
+  tenant: string;
+  tenantRecord?: PlatformTenant;
+  platformContent?: PlatformContentState;
+  impersonating?: boolean;
+  onExitImpersonation?: () => void;
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const [activeItem, setActiveItem] = useState(activeRoute);
-  const registrationPending = new URLSearchParams(window.location.search).get("pending") === "true";
-  const businessName = tenant === "your-business" ? "Your business" : tenant.replace(/-/g, " ").replace(/\b\w/g, letter => letter.toUpperCase());
+  const registrationPending = new URLSearchParams(window.location.search).get("pending") === "true" || (tenantRecord ? tenantRecord.verification !== "Verified" : false);
+  const businessName = tenantRecord?.name || (tenant === "your-business" ? "Your business" : tenant.replace(/-/g, " ").replace(/\b\w/g, letter => letter.toUpperCase()));
   useEffect(() => setActiveItem(activeRoute), [activeRoute]);
   const navigate = (id: string) => { setActiveItem(id); onNavigate(id); };
 
+  const restrictedIds = tenantRecord
+    ? TENANT_MODULE_META.filter(m => !tenantRecord.modules[m.key]).flatMap(m => m.sidebarIds)
+    : [];
+  const restrictedModule = TENANT_MODULE_META.find(m => m.sidebarIds.includes(activeItem) && !tenantRecord?.modules[m.key]);
+
+  if (tenantRecord && !tenantRecord.access && !impersonating) {
+    return (
+      <main className="flex min-h-[100dvh] items-center justify-center bg-slate-950 p-6 text-white">
+        <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-white p-8 text-slate-950 shadow-2xl">
+          <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-800">
+            Workspace Restricted · {tenantRecord.status}
+          </div>
+          <h1 className="mt-4 text-[26px] font-black tracking-tight">{businessName} POS is currently paused</h1>
+          <p className="mt-3 text-[13px] leading-relaxed text-slate-600">
+            Workspace access for <strong>/{tenantRecord.slug}</strong> is locked by DevEngine POS Super Admin ({tenantRecord.verification}). Staff sign-in and register operations will resume once approved.
+          </p>
+          <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-[12px] text-slate-600">
+            <div><strong className="text-slate-900">Plan:</strong> {tenantRecord.plan}</div>
+            <div className="mt-1"><strong className="text-slate-900">Review note:</strong> {tenantRecord.verificationNote || "Awaiting Super Admin review"}</div>
+          </div>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button onClick={onSignOut} className="rounded-xl bg-slate-950 px-4 py-2.5 text-[13px] font-bold text-white">
+              Return to sign in
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   const renderPage = () => {
+    if (restrictedModule && activeItem !== "dashboard") {
+      return (
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
+              <Icon d={icons.shield} size={20} />
+            </span>
+            <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Platform Entitlement Control</p>
+            <h2 className="mt-2 text-[22px] font-black tracking-tight text-slate-950">{restrictedModule.label} is disabled</h2>
+            <p className="mt-2 text-[13px] leading-relaxed text-slate-600">
+              {restrictedModule.description} This capability is currently turned off for <strong>{businessName}</strong> ({tenantRecord?.plan || "Growth"} plan) by DevEngine POS Super Admin.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <button onClick={() => navigate("dashboard")} className="rounded-xl bg-slate-950 px-4 py-2.5 text-[13px] font-bold text-white">
+                Back to Dashboard
+              </button>
+              {impersonating && onExitImpersonation && (
+                <button onClick={onExitImpersonation} className="rounded-xl border border-slate-200 px-4 py-2.5 text-[13px] font-bold text-slate-700 hover:bg-slate-50">
+                  Enable in Super Admin →
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
     if (activeItem === "dashboard") return <DashboardPage onNavigate={navigate} businessName={businessName} />;
     if (activeItem === "pos") return <POSPage onNavigate={navigate} />;
     if (activeItem === "sales") return <SalesPage onNavigate={navigate} />;
@@ -6259,9 +7475,32 @@ function AppShell({ onSignOut, guestApp, onGuestAppChange, activeRoute, onNaviga
 
   return (
     <div className="flex h-[100dvh] bg-[var(--background)]" style={{ fontFamily: "var(--font-inter)" }}>
-      <Sidebar collapsed={collapsed} activeItem={activeItem} onNavigate={navigate} onToggle={() => setCollapsed(!collapsed)} businessName={businessName} />
+      <Sidebar collapsed={collapsed} activeItem={activeItem} onNavigate={navigate} onToggle={() => setCollapsed(!collapsed)} businessName={businessName} restrictedIds={restrictedIds} />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        {impersonating && (
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950 px-5 py-2 text-[12px] text-white">
+            <span className="flex items-center gap-2 font-medium">
+              <span className="h-2 w-2 rounded-full bg-white" />
+              Super Admin View · Inspecting <strong>{businessName}</strong> POS ({tenantRecord?.plan} plan)
+            </span>
+            {onExitImpersonation && (
+              <button onClick={onExitImpersonation} className="rounded-lg bg-white px-3 py-1 text-[11px] font-bold text-slate-950 hover:bg-slate-100">
+                ← Return to Super Admin
+              </button>
+            )}
+          </div>
+        )}
         <Header activeItem={activeItem} onSignOut={onSignOut} onNavigate={navigate} businessName={businessName} />
+        {(tenantRecord?.maintenance || platformContent?.maintenanceBannerEnabled) && (
+          <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-[12px] text-slate-950 shadow-2xs">
+            <span>
+              <strong>Platform Notice:</strong>{" "}
+              {tenantRecord?.maintenance
+                ? `${businessName} is in read-only maintenance mode set by Super Admin.`
+                : platformContent?.maintenanceBannerText}
+            </span>
+          </div>
+        )}
         {registrationPending && <div className="mx-6 mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900"><div><span className="font-bold">Workspace verification pending.</span> Your organisation is in restricted onboarding until DevEngine POS Super Admin completes its review.</div><button onClick={() => navigate("settings")} className="font-bold underline">Review business settings</button></div>}
         {renderPage()}
       </div>
@@ -6277,15 +7516,41 @@ function PlatformAccess({ onSuccess, onBack }: { onSuccess: () => void; onBack: 
     if (!email || !password) { setError("Enter your platform administrator email and password."); return; }
     onSuccess();
   };
-  return <main className="min-h-[100dvh] bg-slate-950 p-5 text-white sm:p-10"><div className="mx-auto grid min-h-[88dvh] max-w-[1120px] items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]"><section><button onClick={onBack} className="text-[13px] font-semibold text-slate-300 hover:text-white">← Back to DevEngine POS</button><div className="mt-10 rounded-xl bg-white/5 p-3"><DevEngineLogo className="w-[220px]" /></div><div className="mt-12 text-[12px] font-bold uppercase tracking-[0.16em] text-slate-400">Platform administrator access</div><h1 className="mt-4 max-w-lg text-[clamp(3rem,5vw,5.2rem)] font-black leading-[0.9] tracking-[-0.065em]">Operate the platform with confidence.</h1><p className="mt-6 max-w-md text-[16px] leading-relaxed text-slate-300">This protected area is for DevEngine platform administrators only. Tenant owners use their own business administration URL.</p><div className="mt-8 space-y-3 text-[13px] text-slate-300"><div className="flex gap-3"><span>✓</span>Dedicated platform roles and audit history</div><div className="flex gap-3"><span>✓</span>MFA, session and access controls in production</div><div className="flex gap-3"><span>✓</span>Tenant data is never visible by default</div></div></section><section className="rounded-[28px] bg-white p-7 text-slate-950 shadow-2xl sm:p-10"><div className="text-[12px] font-bold uppercase tracking-[0.15em] text-slate-500">DevEngine POS</div><h2 className="mt-2 text-[28px] font-black tracking-tight">Platform sign in</h2><p className="mt-2 text-[13px] text-slate-500">Demo UI only. Production access requires server-provisioned platform roles and MFA.</p><div className="mt-7 space-y-4"><Input label="Platform email" value={email} onChange={event => { setEmail(event.target.value); setError(""); }} type="email" placeholder="admin@devengine.com" /><Input label="Password" value={password} onChange={event => { setPassword(event.target.value); setError(""); }} type="password" placeholder="••••••••" />{error && <p className="text-[12px] font-medium text-red-600">{error}</p>}<button onClick={signIn} className="w-full rounded-xl bg-slate-950 px-5 py-3.5 text-[14px] font-bold text-white transition hover:bg-slate-800">Continue to control center →</button></div><div className="mt-6 flex justify-between border-t border-slate-200 pt-5 text-[12px] font-semibold text-slate-600"><button>Forgot password?</button><button>Use recovery code</button></div></section></div></main>;
+  return <main className="min-h-[100dvh] bg-slate-950 p-5 text-white sm:p-10"><div className="mx-auto grid min-h-[88dvh] max-w-[1120px] items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]"><section><button onClick={onBack} className="text-[13px] font-semibold text-slate-300 hover:text-white">← Back to DevEngine POS</button><div className="mt-10"><DevEngineLogo tone="light" className="w-[220px]" /></div><div className="mt-12 text-[12px] font-bold uppercase tracking-[0.16em] text-slate-400">Platform administrator access</div><h1 className="mt-4 max-w-lg text-[clamp(3rem,5vw,5.2rem)] font-black leading-[0.9] tracking-[-0.065em]">Operate the platform with confidence.</h1><p className="mt-6 max-w-md text-[16px] leading-relaxed text-slate-300">This protected area is for DevEngine platform administrators only. Tenant owners use their own business administration URL.</p><div className="mt-8 space-y-3 text-[13px] text-slate-300"><div className="flex gap-3"><span>✓</span>Dedicated platform roles and audit history</div><div className="flex gap-3"><span>✓</span>MFA, session and access controls in production</div><div className="flex gap-3"><span>✓</span>Tenant data is never visible by default</div></div></section><section className="rounded-[28px] bg-white p-7 text-slate-950 shadow-2xl sm:p-10"><div className="text-[12px] font-bold uppercase tracking-[0.15em] text-slate-500">DevEngine POS</div><h2 className="mt-2 text-[28px] font-black tracking-tight">Platform sign in</h2><p className="mt-2 text-[13px] text-slate-500">Demo UI only. Production access requires server-provisioned platform roles and MFA.</p><div className="mt-7 space-y-4"><Input label="Platform email" value={email} onChange={event => { setEmail(event.target.value); setError(""); }} type="email" placeholder="admin@devengine.com" /><Input label="Password" value={password} onChange={event => { setPassword(event.target.value); setError(""); }} type="password" placeholder="••••••••" />{error && <p className="text-[12px] font-medium text-red-600">{error}</p>}<button onClick={signIn} className="w-full rounded-xl bg-slate-950 px-5 py-3.5 text-[14px] font-bold text-white transition hover:bg-slate-800">Continue to control center →</button></div><div className="mt-6 flex justify-between border-t border-slate-200 pt-5 text-[12px] font-semibold text-slate-600"><button>Forgot password?</button><button>Use recovery code</button></div></section></div></main>;
 }
 
-function TenantStorefront({ tenant, page, onNavigate }: { tenant: string; page: string; onNavigate: (path: string) => void }) {
+function TenantStorefront({
+  tenant,
+  page,
+  onNavigate,
+  tenantRecord,
+  sslEnvironment = "Sandbox",
+}: {
+  tenant: string;
+  page: string;
+  onNavigate: (path: string) => void;
+  tenantRecord?: PlatformTenant;
+  sslEnvironment?: "Sandbox" | "Live";
+}) {
   const [cart, setCart] = useState(0);
-  const store = tenant.replace(/-/g, " ").replace(/\b\w/g, letter => letter.toUpperCase());
+  const store = tenantRecord?.name || tenant.replace(/-/g, " ").replace(/\b\w/g, letter => letter.toUpperCase());
   const products = [{ name: "Smart LED Television", price: "৳ 48,500", category: "Electronics" }, { name: "Ceiling Fan", price: "৳ 7,100", category: "Home appliances" }, { name: "LED Bulb 12W", price: "৳ 680", category: "Lighting" }];
   const title = page === "products" ? "Browse products" : page === "cart" ? "Your shopping cart" : page === "checkout" ? "Checkout" : page === "orders" ? "Your orders" : page === "wishlist" ? "Saved items" : page === "contact" ? "Contact our store" : page === "policies" ? "Store policies" : "Everything your home needs, from one trusted store.";
-  return <main className="min-h-[100dvh] bg-slate-50 text-slate-950"><header className="border-b border-slate-200 bg-white"><div className="mx-auto flex h-20 max-w-[1240px] items-center justify-between gap-5 px-5"><button onClick={() => onNavigate(`/${tenant}`)} className="text-left"><div className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Powered by DevEngine POS</div><div className="mt-1 text-[20px] font-black tracking-tight">{store}</div></button><nav className="hidden gap-5 text-[13px] font-semibold text-slate-600 md:flex"><button onClick={() => onNavigate(`/${tenant}/products`)}>Products</button><button onClick={() => onNavigate(`/${tenant}/contact`)}>Contact</button><button onClick={() => onNavigate(`/${tenant}/policies`)}>Policies</button></nav><div className="flex items-center gap-2"><button onClick={() => onNavigate(`/${tenant}/wishlist`)} className="rounded-lg px-3 py-2 text-[13px] font-semibold hover:bg-slate-100">Wishlist</button><button onClick={() => onNavigate(`/${tenant}/cart`)} className="rounded-lg bg-slate-950 px-3 py-2 text-[13px] font-semibold text-white">Cart {cart ? `(${cart})` : ""}</button></div></div></header><div className="mx-auto max-w-[1240px] px-5 py-10"><section className="rounded-[30px] bg-slate-950 p-8 text-white sm:p-12"><div className="max-w-2xl"><div className="text-[12px] font-bold uppercase tracking-[0.16em] text-slate-400">{page === "home" ? "Official customer store" : "Customer experience"}</div><h1 className="mt-4 text-[clamp(2.6rem,6vw,5.5rem)] font-black leading-[0.9] tracking-[-0.065em]">{title}</h1><p className="mt-6 max-w-xl text-[16px] leading-relaxed text-slate-300">This storefront UI belongs to {store}. Catalog, stock, customer access, cart, checkout, and orders will be isolated by tenant when the API foundation is connected.</p>{page === "home" && <button onClick={() => onNavigate(`/${tenant}/products`)} className="mt-8 rounded-xl bg-white px-5 py-3 text-[14px] font-bold text-slate-950">Shop products →</button>}</div></section>{["home", "products"].includes(page) && <section className="mt-10"><div className="mb-5 flex items-center justify-between"><h2 className="text-[24px] font-bold">Featured products</h2><button onClick={() => onNavigate(`/${tenant}/products`)} className="text-[13px] font-bold text-slate-600">View all →</button></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{products.map(product => <article key={product.name} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex h-36 items-center justify-center rounded-xl bg-slate-100 text-[30px] font-black text-slate-300">{product.name.slice(0, 2).toUpperCase()}</div><div className="mt-5 text-[12px] font-semibold text-slate-500">{product.category}</div><h3 className="mt-1 text-[17px] font-bold">{product.name}</h3><div className="mt-3 flex items-center justify-between"><span className="text-[17px] font-black">{product.price}</span><button onClick={() => setCart(count => count + 1)} className="rounded-lg bg-slate-950 px-3 py-2 text-[12px] font-bold text-white">Add to cart</button></div></article>)}</div></section>}{page === "cart" && <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-7"><h2 className="text-[22px] font-bold">Cart summary</h2><p className="mt-2 text-[14px] text-slate-500">{cart ? `${cart} item(s) ready for checkout.` : "Your cart is empty. Add a product to continue."}</p><button onClick={() => onNavigate(`/${tenant}/checkout`)} disabled={!cart} className="mt-6 rounded-xl bg-slate-950 px-5 py-3 text-[14px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Continue to checkout →</button></section>}{["checkout", "orders", "wishlist", "contact", "policies"].includes(page) && <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-7"><h2 className="text-[22px] font-bold">{title}</h2><p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-slate-600">This is the routed storefront UI surface. Its live data, customer authentication, payment, stock reservation and order history will connect through tenant-authorized APIs in the implementation phases.</p></section>}</div></main>;
+
+  if (tenantRecord && !tenantRecord.modules.storefront) {
+    return (
+      <main className="flex min-h-[100dvh] items-center justify-center bg-slate-950 p-6 text-white">
+        <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center text-slate-950 shadow-2xl">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Powered by DevEngine POS</p>
+          <h1 className="mt-3 text-[24px] font-black tracking-tight">{store} storefront is paused</h1>
+          <p className="mt-2 text-[13px] leading-relaxed text-slate-600">Online storefront ordering for this business is currently turned off by DevEngine POS Super Admin.</p>
+          <button onClick={() => onNavigate("/")} className="mt-6 rounded-xl bg-slate-950 px-5 py-2.5 text-[13px] font-bold text-white">Back to DevEngine POS</button>
+        </div>
+      </main>
+    );
+  }
+
+  return <main className="min-h-[100dvh] bg-slate-50 text-slate-950"><header className="border-b border-slate-200 bg-white"><div className="mx-auto flex h-20 max-w-[1240px] items-center justify-between gap-5 px-5"><button onClick={() => onNavigate(`/${tenant}`)} className="text-left"><div className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Powered by DevEngine POS</div><div className="mt-1 text-[20px] font-black tracking-tight">{store}</div></button><nav className="hidden gap-5 text-[13px] font-semibold text-slate-600 md:flex"><button onClick={() => onNavigate(`/${tenant}/products`)}>Products</button><button onClick={() => onNavigate(`/${tenant}/contact`)}>Contact</button><button onClick={() => onNavigate(`/${tenant}/policies`)}>Policies</button></nav><div className="flex items-center gap-2"><button onClick={() => onNavigate(`/${tenant}/wishlist`)} className="rounded-lg px-3 py-2 text-[13px] font-semibold hover:bg-slate-100">Wishlist</button><button onClick={() => onNavigate(`/${tenant}/cart`)} className="rounded-lg bg-slate-950 px-3 py-2 text-[13px] font-semibold text-white">Cart {cart ? `(${cart})` : ""}</button></div></div></header><div className="mx-auto max-w-[1240px] px-5 py-10"><section className="rounded-[30px] bg-slate-950 p-8 text-white sm:p-12"><div className="max-w-2xl"><div className="text-[12px] font-bold uppercase tracking-[0.16em] text-slate-400">{page === "home" ? "Official customer store" : "Customer experience"}</div><h1 className="mt-4 text-[clamp(2.6rem,6vw,5.5rem)] font-black leading-[0.9] tracking-[-0.065em]">{title}</h1><p className="mt-6 max-w-xl text-[16px] leading-relaxed text-slate-300">This storefront UI belongs to {store}. Catalog, stock, customer access, cart, checkout, and orders are controlled under tenant isolation.</p>{page === "home" && <button onClick={() => onNavigate(`/${tenant}/products`)} className="mt-8 rounded-xl bg-white px-5 py-3 text-[14px] font-bold text-slate-950">Shop products →</button>}</div></section>{["home", "products"].includes(page) && <section className="mt-10"><div className="mb-5 flex items-center justify-between"><h2 className="text-[24px] font-bold">Featured products</h2><button onClick={() => onNavigate(`/${tenant}/products`)} className="text-[13px] font-bold text-slate-600">View all →</button></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{products.map(product => <article key={product.name} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex h-36 items-center justify-center rounded-xl bg-slate-100 text-[30px] font-black text-slate-300">{product.name.slice(0, 2).toUpperCase()}</div><div className="mt-5 text-[12px] font-semibold text-slate-500">{product.category}</div><h3 className="mt-1 text-[17px] font-bold">{product.name}</h3><div className="mt-3 flex items-center justify-between"><span className="text-[17px] font-black">{product.price}</span><button onClick={() => setCart(count => count + 1)} className="rounded-lg bg-slate-950 px-3 py-2 text-[12px] font-bold text-white">Add to cart</button></div></article>)}</div></section>}{page === "cart" && <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-7"><h2 className="text-[22px] font-bold">Cart summary</h2><p className="mt-2 text-[14px] text-slate-500">{cart ? `${cart} item(s) ready for checkout.` : "Your cart is empty. Add a product to continue."}</p>{tenantRecord?.modules.sslcommerzOnline && <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">Verified by SSLCommerz · {sslEnvironment}</div>}<div className="mt-6"><button onClick={() => onNavigate(`/${tenant}/checkout`)} disabled={!cart} className="rounded-xl bg-slate-950 px-5 py-3 text-[14px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Continue to checkout →</button></div></section>}{["checkout", "orders", "wishlist", "contact", "policies"].includes(page) && <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-7"><h2 className="text-[22px] font-bold">{title}</h2><p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-slate-600">This is the routed storefront UI surface for {store}.{tenantRecord?.modules.sslcommerzOnline ? ` SSLCommerz online checkout is enabled in ${sslEnvironment} mode.` : " Online gateway checkout is currently disabled for this merchant."}</p></section>}</div></main>;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -6367,8 +7632,42 @@ function PasswordRecoveryFlow({ open, onClose }: { open: boolean; onClose: () =>
 
 export default function App() {
   const [route, setRoute] = useState<RouteState>(() => readRoute());
-  const [guestApp, setGuestApp] = useState<GuestAppConfig>({ playStoreUrl: "", appStoreUrl: "", unavailableMessage: "Our guest app is not available for download yet. We are putting the finishing touches on a great shopping experience - please check back soon." });
+  const [platformState, setPlatformState] = useState<PlatformState>(() => loadPlatformState());
+  const [impersonatingTenant, setImpersonatingTenant] = useState<string | null>(null);
   const [passwordRecoveryOpen, setPasswordRecoveryOpen] = useState(false);
+
+  useEffect(() => {
+    savePlatformState(platformState);
+  }, [platformState]);
+
+  const updatePlatformState = (
+    updater: (prev: PlatformState) => PlatformState,
+    noticeText: string,
+    category: AuditCategory = "Security",
+    target = "Platform"
+  ) => {
+    setPlatformState(prev => {
+      const next = updater(prev);
+      const entry: AuditEntry = {
+        id: `AUD-${Date.now().toString().slice(-5)}`,
+        actor: next.profile.name,
+        category,
+        action: noticeText,
+        target,
+        time: "Just now",
+      };
+      return {
+        ...next,
+        audit: [entry, ...next.audit].slice(0, 80),
+      };
+    });
+  };
+
+  const resetPlatformState = () => {
+    clearPlatformState();
+    setPlatformState(loadPlatformState());
+  };
+
   const syncRoute = () => {
     const next = readRoute();
     setRoute(next);
@@ -6400,16 +7699,99 @@ export default function App() {
     return () => document.removeEventListener("click", openRecovery);
   }, []);
 
+  const guestApp = platformState.content.guestApp;
+  const setGuestApp = (next: GuestAppConfig) => {
+    updatePlatformState(
+      prev => ({
+        ...prev,
+        content: { ...prev.content, guestApp: next },
+      }),
+      "Updated branded guest app configuration",
+      "Content",
+      "Guest App"
+    );
+  };
+  const matchedTenant =
+    platformState.tenants.find(t => t.slug === route.tenant) ||
+    (route.tenant === DEFAULT_TENANT ? platformState.tenants.find(t => t.id === "selim") : undefined);
+  const disabledPaymentChannels = platformState.gateway.channels.filter(c => !c.enabled).map(c => c.id);
+
   return (
     <div className={route.view === "landing" || route.view === "public" ? "landing-canvas" : "min-h-[100dvh]"} style={{ fontFamily: "var(--font-inter)" }}>
-      {route.view === "landing" && <LandingPage onContinue={() => navigateTo("/signin")} onOpenPage={(page) => navigateTo(`/${page}`)} onStartTrial={(plan) => navigateTo(`/signup${plan ? `?plan=${plan}` : ""}`)} guestApp={guestApp} />}
+      {route.view === "landing" && (
+        <LandingPage
+          onContinue={() => navigateTo("/signin")}
+          onOpenPage={(page) => navigateTo(`/${page}`)}
+          onStartTrial={(plan) => navigateTo(`/signup${plan ? `?plan=${plan}` : ""}`)}
+          guestApp={guestApp}
+          platformContent={platformState.content}
+          platformPlans={platformState.plans}
+          disabledPaymentChannels={disabledPaymentChannels}
+          paymentEnvironment={platformState.gateway.environment}
+        />
+      )}
       {route.view === "public" && <PublicInfoPage page={route.publicPage} onBack={() => navigateTo("/")} onContinue={() => navigateTo("/signin")} />}
       {route.view === "auth" && <TenantWorkspaceSignInV2 tenant={route.tenant} onSuccess={() => navigateTo(`/${route.tenant}/admin/dashboard`)} onBack={() => navigateTo("/")} onRegister={() => navigateTo("/signup")} />}
-      {route.view === "signup" && <StartTrialPage onBack={() => navigateTo("/")} onContinue={(slug) => navigateTo(`/${slug}/login?pending=true`)} />}
-      {route.view === "app" && <AppShell onSignOut={() => navigateTo("/")} guestApp={guestApp} onGuestAppChange={setGuestApp} activeRoute={route.workspacePage} onNavigate={(id) => navigateTo(`/${route.tenant}/admin/${id}`)} tenant={route.tenant} />}
-      {route.view === "storefront" && <TenantStorefront tenant={route.tenant} page={route.workspacePage} onNavigate={navigateTo} />}
+      {route.view === "signup" && (
+        <StartTrialPage
+          onBack={() => navigateTo("/")}
+          onContinue={(slug) => navigateTo(`/${slug}/login?pending=true`)}
+          livePlans={platformState.plans}
+          onRegisterTenant={(createdTenant) => {
+            updatePlatformState(
+              prev => ({
+                ...prev,
+                tenants: [createdTenant, ...prev.tenants],
+              }),
+              `Submitted registration for ${createdTenant.name} (/${createdTenant.slug})`,
+              "KYC",
+              createdTenant.name
+            );
+          }}
+        />
+      )}
+      {route.view === "app" && (
+        <AppShell
+          onSignOut={() => { setImpersonatingTenant(null); navigateTo("/"); }}
+          guestApp={guestApp}
+          onGuestAppChange={setGuestApp}
+          activeRoute={route.workspacePage}
+          onNavigate={(id) => navigateTo(`/${route.tenant}/admin/${id}`)}
+          tenant={route.tenant}
+          tenantRecord={matchedTenant}
+          platformContent={platformState.content}
+          impersonating={impersonatingTenant === route.tenant}
+          onExitImpersonation={() => {
+            setImpersonatingTenant(null);
+            navigateTo("/workspace/organisations");
+          }}
+        />
+      )}
+      {route.view === "storefront" && (
+        <TenantStorefront
+          tenant={route.tenant}
+          page={route.workspacePage}
+          onNavigate={navigateTo}
+          tenantRecord={matchedTenant}
+          sslEnvironment={platformState.gateway.environment}
+        />
+      )}
       {route.view === "platformAuth" && <PlatformAccess onSuccess={() => navigateTo("/workspace/dashboard")} onBack={() => navigateTo("/")} />}
-      {route.view === "platform" && <PlatformConsole onExit={() => navigateTo("/")} onNavigate={(tab) => navigateTo(`/workspace/${tab}`)} initialActive={({ dashboard: "overview", organizations: "organisations", subscriptions: "plans", users: "organisations", settings: "flags" } as Record<string, string>)[route.workspacePage] || route.workspacePage} />}
+      {route.view === "platform" && (
+        <SuperAdminControlCenter
+          state={platformState}
+          onUpdateState={updatePlatformState}
+          onResetState={resetPlatformState}
+          onImpersonateTenant={(slug, targetRoute) => {
+            setImpersonatingTenant(slug);
+            navigateTo(`/${slug}/admin/${targetRoute || "dashboard"}`);
+          }}
+          onOpenStorefront={(slug) => navigateTo(`/${slug}`)}
+          onExit={() => navigateTo("/")}
+          onNavigate={(tab) => navigateTo(`/workspace/${tab}`)}
+          initialActive={({ dashboard: "overview", organizations: "organisations", subscriptions: "subscriptions", revenue: "subscriptions", users: "organisations", settings: "settings", website: "content", flags: "features" } as Record<string, string>)[route.workspacePage] || route.workspacePage}
+        />
+      )}
       <PasswordRecoveryFlow open={passwordRecoveryOpen} onClose={() => setPasswordRecoveryOpen(false)} />
     </div>
   );
